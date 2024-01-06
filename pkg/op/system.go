@@ -7,14 +7,14 @@ import (
 	"os"
 )
 
-func Halt(_ []int16, _ *memory.Registers) {
+func Halt(_ *memory.Registers, _ []uint16) {
 	log.Println()
 	log.Println("Execution halted.")
 	os.Exit(0)
 }
 
-func Noop(_ []int16, _ *memory.Registers) {}
+func Noop(_ *memory.Registers, _ []uint16) {}
 
-func Out(args []int16, _ *memory.Registers) {
+func Out(_ *memory.Registers, args []uint16) {
 	fmt.Print(string(args[0]))
 }

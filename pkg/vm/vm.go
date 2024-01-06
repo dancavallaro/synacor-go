@@ -9,19 +9,21 @@ import (
 )
 
 type opRef struct {
-	opcode   int16
+	opcode   uint16
 	nArgs    int
-	execute  func(args []int16, registers *memory.Registers)
+	execute  func(registers *memory.Registers, args []uint16)
 	mnemonic string
 }
 
 var ops = []opRef{
 	{0, 0, op.Halt, "halt"},
 	{6, 1, op.Jmp, "jmp"},
+	{7, 2, op.Jt, "jt"},
+	{8, 2, op.Jf, "jf"},
 	{19, 1, op.Out, "out"},
 	{21, 0, op.Noop, "noop"},
 }
-var opRefs = map[int16]opRef{}
+var opRefs = map[uint16]opRef{}
 
 func init() {
 	for _, o := range ops {
@@ -29,8 +31,8 @@ func init() {
 	}
 }
 
-func readWord(bin []byte, address int) int16 {
-	return (int16(bin[address+1]) << 8) + int16(bin[address])
+func readWord(bin []byte, address int) uint16 {
+	return (uint16(bin[address+1]) << 8) + uint16(bin[address])
 }
 
 func Execute(bin []byte, trace bool) error {
@@ -41,18 +43,18 @@ func Execute(bin []byte, trace bool) error {
 		if !ok {
 			return errors.New(fmt.Sprintf("invalid opcode %d", w))
 		}
+		r.PC += 2
 
-		var args []int16
+		var args []uint16
 		for arg := 1; arg <= o.nArgs; arg++ {
-			w := readWord(bin, r.PC+1+arg)
+			w := readWord(bin, r.PC)
 			args = append(args, w)
 			r.PC += 2
 		}
 		if trace {
 			log.Printf("%d (%s): %v\n", o.opcode, o.mnemonic, args)
 		}
-		r.PC += 2
-		o.execute(args, &r)
+		o.execute(&r, args)
 	}
 	return nil
 }
