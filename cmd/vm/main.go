@@ -12,6 +12,7 @@ const required = "<required>"
 var (
 	binPath = flag.String("bin", required, "Path to executable (.bin)")
 	trace   = flag.Bool("trace", false, "Print each opcode during execution")
+	delay   = flag.Int("delay", -1, "Delay (in milliseconds) between execution of each operation")
 )
 
 func main() {
@@ -24,7 +25,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = vm.Execute(binary, *trace)
+	opts := vm.ExecutionOptions{
+		Trace: *trace,
+		Delay: *delay,
+	}
+	err = vm.Execute(binary, &opts)
 	log.Println()
 	if err != nil {
 		log.Fatalf("Execution aborted: %s\n", err)

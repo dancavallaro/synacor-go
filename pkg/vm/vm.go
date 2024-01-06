@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 )
 
 type opRef struct {
@@ -35,7 +36,12 @@ func readWord(bin []byte, address int) uint16 {
 	return (uint16(bin[address+1]) << 8) + uint16(bin[address])
 }
 
-func Execute(bin []byte, trace bool) error {
+type ExecutionOptions struct {
+	Trace bool
+	Delay int
+}
+
+func Execute(bin []byte, opts *ExecutionOptions) error {
 	r := memory.Registers{}
 	for r.PC = 0; r.PC < len(bin)-1; {
 		w := readWord(bin, r.PC)
@@ -51,10 +57,14 @@ func Execute(bin []byte, trace bool) error {
 			args = append(args, w)
 			r.PC += 2
 		}
-		if trace {
+		if opts.Trace {
 			log.Printf("%d (%s): %v\n", o.opcode, o.mnemonic, args)
 		}
 		o.execute(&r, args)
+
+		if opts.Delay != -1 {
+			time.Sleep(time.Duration(opts.Delay) * time.Millisecond)
+		}
 	}
 	return nil
 }
