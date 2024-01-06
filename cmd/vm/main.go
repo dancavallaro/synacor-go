@@ -17,6 +17,8 @@ var (
 
 func main() {
 	flag.Parse()
+	log.SetFlags(0)
+
 	if *binPath == required {
 		log.Fatalln("-bin is required")
 	}

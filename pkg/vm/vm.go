@@ -45,6 +45,7 @@ type ExecutionOptions struct {
 func Execute(bin []byte, opts *ExecutionOptions) error {
 	r := memory.Registers{}
 	for r.PC = 0; r.PC < len(bin)-1; {
+		pc := r.PC
 		w := readWord(bin, r.PC)
 		o, ok := opRefs[w]
 		if !ok {
@@ -59,7 +60,7 @@ func Execute(bin []byte, opts *ExecutionOptions) error {
 			r.PC += 2
 		}
 		if opts.Trace {
-			log.Printf("%d (%s): %v\n", o.opcode, o.mnemonic, args)
+			log.Printf("[PC=%d (0x%x)] %d (%s): %v\n", pc, pc, o.opcode, o.mnemonic, args)
 		}
 		o.execute(&r, args)
 
