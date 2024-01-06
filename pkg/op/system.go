@@ -16,5 +16,5 @@ func Halt(_ *memory.Registers, _ []uint16) {
 func Noop(_ *memory.Registers, _ []uint16) {}
 
 func Out(_ *memory.Registers, args []uint16) {
-	fmt.Print(string(args[0]))
+	fmt.Print(string(rune(args[0])))
 }
