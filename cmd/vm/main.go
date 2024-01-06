@@ -27,7 +27,7 @@ func main() {
 	err = vm.Execute(binary, *trace)
 	log.Println()
 	if err != nil {
-		log.Fatalf("Executed aborted: %s\n", err)
+		log.Fatalf("Execution aborted: %s\n", err)
 	}
 	log.Println("Program completed execution normally.")
 }
