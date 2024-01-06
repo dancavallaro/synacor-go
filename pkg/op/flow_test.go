@@ -6,13 +6,6 @@ import (
 	"testing"
 )
 
-const (
-	testWordAddr = 42
-	testByteAddr = 2 * testWordAddr
-)
-
-const R0 = memory.RegOffset
-
 func TestJump(t *testing.T) {
 	r := &memory.Registers{}
 	Jmp(r, args(testWordAddr))
@@ -74,8 +67,4 @@ func TestJf_Jump_RegTarget(t *testing.T) {
 	r.GP[0] = testWordAddr
 	Jf(r, args(0, R0))
 	assert.Equal(t, testByteAddr, r.PC)
-}
-
-func args(a ...uint16) []uint16 {
-	return a
 }

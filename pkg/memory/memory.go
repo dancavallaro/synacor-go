@@ -22,3 +22,10 @@ func ReadVal(r *Registers, arg uint16) uint16 {
 	}
 	return arg
 }
+
+func RegNum(arg uint16) uint16 {
+	if arg < RegOffset || arg >= RegOffset+NumRegisters {
+		log.Panicf("arg %d is not a valid register value", arg)
+	}
+	return arg - RegOffset
+}
