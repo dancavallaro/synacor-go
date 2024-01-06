@@ -10,20 +10,19 @@ func jump(r *memory.Registers, addr uint16) {
 }
 
 func Jmp(r *memory.Registers, args []uint16) {
-	jump(r, args[0])
+	target := memory.ReadVal(r, args[0])
+	jump(r, target)
 }
 
 func Jt(r *memory.Registers, args []uint16) {
-	// TODO: need to support the args being registers
-	a, b := args[0], args[1]
+	a, b := memory.ReadVal(r, args[0]), memory.ReadVal(r, args[1])
 	if a != 0 {
 		jump(r, b)
 	}
 }
 
 func Jf(r *memory.Registers, args []uint16) {
-	// TODO: need to support the args being registers
-	a, b := args[0], args[1]
+	a, b := memory.ReadVal(r, args[0]), memory.ReadVal(r, args[1])
 	if a == 0 {
 		jump(r, b)
 	}
