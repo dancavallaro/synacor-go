@@ -22,6 +22,7 @@ var ops = []opRef{
 	{6, 1, op.Jmp, "jmp"},
 	{7, 2, op.Jt, "jt"},
 	{8, 2, op.Jf, "jf"},
+	{9, 3, op.Add, "add"},
 	{19, 1, op.Out, "out"},
 	{21, 0, op.Noop, "noop"},
 }
