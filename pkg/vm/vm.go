@@ -37,6 +37,7 @@ var ops = []opRef{
 	{17, 1, op.Call, "call"},
 	{18, 0, op.Ret, "ret"},
 	{19, 1, op.Out, "out"},
+	{20, 1, op.In, "in"},
 	{21, 0, op.Noop, "noop"},
 }
 var opRefs = map[uint16]opRef{}
