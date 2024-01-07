@@ -3,8 +3,7 @@ package op
 import "dancavallaro.com/synacor-go/pkg/memory"
 
 const (
-	testWordAddr = 42
-	testByteAddr = 2 * testWordAddr
+	testAddr = 42
 )
 
 const (

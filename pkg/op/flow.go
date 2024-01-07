@@ -5,8 +5,7 @@ import (
 )
 
 func jump(m *memory.Memory, addr uint16) {
-	byteAddr := addr * 2 // Addresses are word-indexed, but "memory" is byte-indexed
-	m.PC = int(byteAddr)
+	m.PC = int(addr)
 }
 
 func Jmp(m *memory.Memory, args []uint16) {
@@ -30,7 +29,7 @@ func Jf(m *memory.Memory, args []uint16) {
 
 func Call(m *memory.Memory, args []uint16) {
 	a := memory.ReadVal(m, args[0])
-	m.Push(uint16(m.PC / 2))
+	m.Push(uint16(m.PC))
 	jump(m, a)
 }
 

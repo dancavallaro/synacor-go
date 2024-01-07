@@ -57,28 +57,28 @@ type ExecutionOptions struct {
 }
 
 func Execute(bin []byte, opts *ExecutionOptions) error {
-	r := &memory.Memory{}
-	loadProgram(r, bin)
+	m := &memory.Memory{}
+	loadProgram(m, bin)
 	opsExecuted := 0
-	for r.PC = 0; r.PC < len(bin)-1; {
-		pc := r.PC
-		w := readWord(bin, r.PC)
+	for m.PC = 0; m.PC < len(bin)-1; {
+		pc := m.PC
+		w := m.ReadWord(uint16(m.PC))
 		o, ok := opRefs[w]
 		if !ok {
 			return errors.New(fmt.Sprintf("invalid opcode %d", w))
 		}
-		r.PC += 2
+		m.PC += 1
 
 		var args []uint16
 		for arg := 1; arg <= o.nArgs; arg++ {
-			w := readWord(bin, r.PC)
+			w := m.ReadWord(uint16(m.PC))
 			args = append(args, w)
-			r.PC += 2
+			m.PC += 1
 		}
 		if opts.Trace {
 			log.Printf("[PC=%d (0x%x)] %d (%s): %v\n", pc, pc, o.opcode, o.mnemonic, args)
 		}
-		o.execute(r, args)
+		o.execute(m, args)
 		opsExecuted++
 
 		if opts.Delay != -1 {
