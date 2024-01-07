@@ -22,6 +22,7 @@ var ops = []opRef{
 	{2, 1, op.Push, "push"},
 	{3, 1, op.Pop, "pop"},
 	{4, 3, op.Eq, "eq"},
+	{5, 3, op.Gt, "gt"},
 	{6, 1, op.Jmp, "jmp"},
 	{7, 2, op.Jt, "jt"},
 	{8, 2, op.Jf, "jf"},
