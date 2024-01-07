@@ -52,6 +52,7 @@ type ExecutionOptions struct {
 
 func Execute(bin []byte, opts *ExecutionOptions) error {
 	r := memory.Memory{}
+	opsExecuted := 0
 	for r.PC = 0; r.PC < len(bin)-1; {
 		pc := r.PC
 		w := readWord(bin, r.PC)
@@ -71,10 +72,12 @@ func Execute(bin []byte, opts *ExecutionOptions) error {
 			log.Printf("[PC=%d (0x%x)] %d (%s): %v\n", pc, pc, o.opcode, o.mnemonic, args)
 		}
 		o.execute(&r, args)
+		opsExecuted++
 
 		if opts.Delay != -1 {
 			time.Sleep(time.Duration(opts.Delay) * time.Millisecond)
 		}
 	}
+	fmt.Printf("Executed %d instructions\n", opsExecuted)
 	return nil
 }
