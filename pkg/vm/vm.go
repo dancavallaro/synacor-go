@@ -32,6 +32,8 @@ var ops = []opRef{
 	{12, 3, op.And, "and"},
 	{13, 3, op.Or, "or"},
 	{14, 2, op.Not, "not"},
+	{15, 2, op.Rmem, "rmem"},
+	{16, 2, op.Wmem, "wmem"},
 	{17, 1, op.Call, "call"},
 	{19, 1, op.Out, "out"},
 	{21, 0, op.Noop, "noop"},
@@ -54,7 +56,8 @@ type ExecutionOptions struct {
 }
 
 func Execute(bin []byte, opts *ExecutionOptions) error {
-	r := memory.Memory{}
+	r := &memory.Memory{}
+	loadProgram(r, bin)
 	opsExecuted := 0
 	for r.PC = 0; r.PC < len(bin)-1; {
 		pc := r.PC
@@ -74,7 +77,7 @@ func Execute(bin []byte, opts *ExecutionOptions) error {
 		if opts.Trace {
 			log.Printf("[PC=%d (0x%x)] %d (%s): %v\n", pc, pc, o.opcode, o.mnemonic, args)
 		}
-		o.execute(&r, args)
+		o.execute(r, args)
 		opsExecuted++
 
 		if opts.Delay != -1 {
@@ -83,4 +86,10 @@ func Execute(bin []byte, opts *ExecutionOptions) error {
 	}
 	fmt.Printf("Executed %d instructions\n", opsExecuted)
 	return nil
+}
+
+func loadProgram(r *memory.Memory, bin []byte) {
+	for i, b := range bin {
+		r.Mem[i] = uint16(b)
+	}
 }
