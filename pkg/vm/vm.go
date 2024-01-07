@@ -19,6 +19,7 @@ type opRef struct {
 var ops = []opRef{
 	{0, 0, op.Halt, "halt"},
 	{1, 2, op.Set, "set"},
+	{4, 3, op.Eq, "eq"},
 	{6, 1, op.Jmp, "jmp"},
 	{7, 2, op.Jt, "jt"},
 	{8, 2, op.Jf, "jf"},
