@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"dancavallaro.com/synacor-go/internal/util"
 	"dancavallaro.com/synacor-go/pkg/memory"
 	"dancavallaro.com/synacor-go/pkg/op"
 	"errors"
@@ -48,41 +49,55 @@ func init() {
 	}
 }
 
-func readWord(bin []byte, address int) uint16 {
-	return (uint16(bin[address+1]) << 8) + uint16(bin[address])
-}
-
 type ExecutionOptions struct {
-	Trace bool
-	Delay int
+	Trace      bool
+	Delay      int
+	Breakpoint int
 }
 
 func Execute(bin []byte, opts *ExecutionOptions) error {
 	m := &memory.Memory{}
 	loadProgram(m, bin)
 	opsExecuted := 0
+	stepDebugging := false
 	for m.PC = 0; m.PC < len(bin)-1; {
-		pc := m.PC
+		pc := m.PC // Save original PC value
 		w := m.ReadWord(uint16(m.PC))
+		m.PC += 1
 		o, ok := opRefs[w]
 		if !ok {
 			return errors.New(fmt.Sprintf("invalid opcode %d", w))
 		}
-		m.PC += 1
 
 		var args []uint16
 		for arg := 1; arg <= o.nArgs; arg++ {
 			w := m.ReadWord(uint16(m.PC))
-			args = append(args, w)
 			m.PC += 1
+			args = append(args, w)
+		}
+
+		if opts.Breakpoint >= 0 && pc == opts.Breakpoint {
+			opts.Trace = true
+			stepDebugging = true
 		}
 		if opts.Trace {
-			log.Printf("[PC=%d (0x%x)] %d (%s): %v\n", pc, pc, o.opcode, o.mnemonic, args)
+			prefix := ""
+			if stepDebugging {
+				prefix = "(step, r to resume) "
+			}
+			log.Printf("%s[PC=%d (0x%x)] %d (%s): %v", prefix, pc, pc, o.opcode, o.mnemonic, args)
 		}
+		if stepDebugging {
+			ch := util.ReadChar()
+			if ch == 'r' {
+				stepDebugging = false
+			}
+		}
+
 		o.execute(m, args)
 		opsExecuted++
 
-		if opts.Delay != -1 {
+		if opts.Delay > 0 {
 			time.Sleep(time.Duration(opts.Delay) * time.Millisecond)
 		}
 	}
