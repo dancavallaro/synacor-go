@@ -35,6 +35,7 @@ var ops = []opRef{
 	{15, 2, op.Rmem, "rmem"},
 	{16, 2, op.Wmem, "wmem"},
 	{17, 1, op.Call, "call"},
+	{18, 0, op.Ret, "ret"},
 	{19, 1, op.Out, "out"},
 	{21, 0, op.Noop, "noop"},
 }

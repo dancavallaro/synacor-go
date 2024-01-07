@@ -33,3 +33,8 @@ func Call(m *memory.Memory, args []uint16) {
 	m.Push(uint16(m.PC / 2))
 	jump(m, a)
 }
+
+func Ret(m *memory.Memory, _ []uint16) {
+	a := m.Pop()
+	jump(m, a)
+}
