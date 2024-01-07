@@ -27,3 +27,9 @@ func Jf(m *memory.Memory, args []uint16) {
 		jump(m, b)
 	}
 }
+
+func Call(m *memory.Memory, args []uint16) {
+	a := memory.ReadVal(m, args[0])
+	m.Push(uint16(m.PC / 2))
+	jump(m, a)
+}

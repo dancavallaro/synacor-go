@@ -30,6 +30,7 @@ var ops = []opRef{
 	{12, 3, op.And, "and"},
 	{13, 3, op.Or, "or"},
 	{14, 2, op.Not, "not"},
+	{17, 1, op.Call, "call"},
 	{19, 1, op.Out, "out"},
 	{21, 0, op.Noop, "noop"},
 }
