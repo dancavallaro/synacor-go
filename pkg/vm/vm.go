@@ -27,6 +27,8 @@ var ops = []opRef{
 	{7, 2, op.Jt, "jt"},
 	{8, 2, op.Jf, "jf"},
 	{9, 3, op.Add, "add"},
+	{10, 3, op.Mult, "mult"},
+	{11, 3, op.Mod, "mod"},
 	{12, 3, op.And, "and"},
 	{13, 3, op.Or, "or"},
 	{14, 2, op.Not, "not"},
