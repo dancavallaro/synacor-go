@@ -4,9 +4,12 @@ import (
 	"dancavallaro.com/synacor-go/internal/util"
 	"dancavallaro.com/synacor-go/pkg/memory"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
+
+var Output io.Writer = os.Stdout
 
 func Halt(_ *memory.Memory, _ []uint16) {
 	log.Println()
@@ -17,7 +20,7 @@ func Halt(_ *memory.Memory, _ []uint16) {
 func Noop(_ *memory.Memory, _ []uint16) {}
 
 func Out(_ *memory.Memory, args []uint16) {
-	fmt.Print(string(rune(args[0])))
+	fmt.Fprint(Output, string(rune(args[0])))
 }
 
 func In(m *memory.Memory, args []uint16) {

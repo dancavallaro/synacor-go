@@ -55,53 +55,71 @@ type ExecutionOptions struct {
 	Breakpoint int
 }
 
-func Execute(bin []byte, opts *ExecutionOptions) error {
-	m := &memory.Memory{}
-	loadProgram(m, bin)
-	opsExecuted := 0
-	stepDebugging := false
-	for m.PC = 0; m.PC < len(bin)-1; {
-		pc := m.PC // Save original PC value
-		w := m.ReadWord(uint16(m.PC))
-		m.PC += 1
-		o, ok := opRefs[w]
-		if !ok {
-			return errors.New(fmt.Sprintf("invalid opcode %d", w))
-		}
+type VM struct {
+	M       memory.Memory
+	Options *ExecutionOptions
 
-		var args []uint16
-		for arg := 1; arg <= o.nArgs; arg++ {
-			w := m.ReadWord(uint16(m.PC))
-			m.PC += 1
-			args = append(args, w)
-		}
+	opsExecuted   int
+	stepDebugging bool
+}
 
-		if opts.Breakpoint >= 0 && pc == opts.Breakpoint {
-			opts.Trace = true
-			stepDebugging = true
-		}
-		if opts.Trace {
-			prefix := ""
-			if stepDebugging {
-				prefix = "(step, r to resume) "
-			}
-			log.Printf("%s[PC=%d (0x%x)] %d (%s): %v", prefix, pc, pc, o.opcode, o.mnemonic, args)
-		}
-		if stepDebugging {
-			ch := util.ReadChar()
-			if ch == 'r' {
-				stepDebugging = false
-			}
-		}
+func NewVM(bin []byte, opts *ExecutionOptions) *VM {
+	vm := &VM{}
+	vm.Options = opts
+	loadProgram(&vm.M, bin)
+	return vm
+}
 
-		o.execute(m, args)
-		opsExecuted++
+func (vm *VM) Step() error {
+	pc := vm.M.PC // Save original PC value
+	w := vm.M.ReadWord(uint16(vm.M.PC))
+	vm.M.PC += 1
+	o, ok := opRefs[w]
+	if !ok {
+		return errors.New(fmt.Sprintf("invalid opcode %d", w))
+	}
 
-		if opts.Delay > 0 {
-			time.Sleep(time.Duration(opts.Delay) * time.Millisecond)
+	var args []uint16
+	for arg := 1; arg <= o.nArgs; arg++ {
+		w := vm.M.ReadWord(uint16(vm.M.PC))
+		vm.M.PC += 1
+		args = append(args, w)
+	}
+
+	if vm.Options.Breakpoint >= 0 && pc == vm.Options.Breakpoint {
+		vm.Options.Trace = true
+		vm.stepDebugging = true
+	}
+	if vm.Options.Trace {
+		prefix := ""
+		if vm.stepDebugging {
+			prefix = "(step, r to resume) "
+		}
+		log.Printf("%s[PC=%d (0x%x)] %d (%s): %v", prefix, pc, pc, o.opcode, o.mnemonic, args)
+	}
+	if vm.stepDebugging {
+		ch := util.ReadChar()
+		if ch == 'r' {
+			vm.stepDebugging = false
 		}
 	}
-	fmt.Printf("Executed %d instructions\n", opsExecuted)
+
+	o.execute(&vm.M, args)
+	vm.opsExecuted++
+
+	if vm.Options.Delay > 0 {
+		time.Sleep(time.Duration(vm.Options.Delay) * time.Millisecond)
+	}
+	return nil
+}
+
+func (vm *VM) Execute() error {
+	for vm.M.PC = 0; vm.M.PC < len(vm.M.Mem); {
+		if err := vm.Step(); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("Executed %d instructions\n", vm.opsExecuted)
 	return nil
 }
 

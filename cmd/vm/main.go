@@ -33,7 +33,8 @@ func main() {
 		Delay:      *delay,
 		Breakpoint: *breakpoint,
 	}
-	err = vm.Execute(binary, &opts)
+	vm := vm.NewVM(binary, &opts)
+	err = vm.Execute()
 	log.Println()
 	if err != nil {
 		log.Fatalf("Execution aborted: %s\n", err)
