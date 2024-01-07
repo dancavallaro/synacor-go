@@ -7,64 +7,64 @@ import (
 )
 
 func TestJump(t *testing.T) {
-	r := &memory.Registers{}
-	Jmp(r, args(testWordAddr))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	Jmp(m, args(testWordAddr))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJump_RegTarget(t *testing.T) {
-	r := &memory.Registers{}
-	r.GP[0] = testWordAddr
-	Jmp(r, args(R0))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	m.GP[0] = testWordAddr
+	Jmp(m, args(R0))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJt_NoJump(t *testing.T) {
-	r := &memory.Registers{}
-	Jt(r, args(0, testWordAddr))
-	assert.Equal(t, 0, r.PC)
+	m := &memory.Memory{}
+	Jt(m, args(0, testWordAddr))
+	assert.Equal(t, 0, m.PC)
 }
 
 func TestJt_Jump(t *testing.T) {
-	r := &memory.Registers{}
-	Jt(r, args(1, testWordAddr))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	Jt(m, args(1, testWordAddr))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJt_Jump_RegTarget(t *testing.T) {
-	r := &memory.Registers{}
-	r.GP[0] = testWordAddr
-	Jt(r, args(1, R0))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	m.GP[0] = testWordAddr
+	Jt(m, args(1, R0))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJt_NoJump_RegArg(t *testing.T) {
-	r := &memory.Registers{}
-	Jt(r, args(R0, testWordAddr))
-	assert.Equal(t, 0, r.PC)
+	m := &memory.Memory{}
+	Jt(m, args(R0, testWordAddr))
+	assert.Equal(t, 0, m.PC)
 }
 
 func TestJf_NoJump(t *testing.T) {
-	r := &memory.Registers{}
-	Jf(r, args(1, testWordAddr))
-	assert.Equal(t, 0, r.PC)
+	m := &memory.Memory{}
+	Jf(m, args(1, testWordAddr))
+	assert.Equal(t, 0, m.PC)
 }
 
 func TestJf_Jump(t *testing.T) {
-	r := &memory.Registers{}
-	Jf(r, args(0, testWordAddr))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	Jf(m, args(0, testWordAddr))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJf_Jump_RegArg(t *testing.T) {
-	r := &memory.Registers{}
-	Jf(r, args(R0, testWordAddr))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	Jf(m, args(R0, testWordAddr))
+	assert.Equal(t, testByteAddr, m.PC)
 }
 
 func TestJf_Jump_RegTarget(t *testing.T) {
-	r := &memory.Registers{}
-	r.GP[0] = testWordAddr
-	Jf(r, args(0, R0))
-	assert.Equal(t, testByteAddr, r.PC)
+	m := &memory.Memory{}
+	m.GP[0] = testWordAddr
+	Jf(m, args(0, R0))
+	assert.Equal(t, testByteAddr, m.PC)
 }

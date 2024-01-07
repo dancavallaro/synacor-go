@@ -4,26 +4,26 @@ import (
 	"dancavallaro.com/synacor-go/pkg/memory"
 )
 
-func jump(r *memory.Registers, addr uint16) {
+func jump(m *memory.Memory, addr uint16) {
 	byteAddr := addr * 2 // Addresses are word-indexed, but "memory" is byte-indexed
-	r.PC = int(byteAddr)
+	m.PC = int(byteAddr)
 }
 
-func Jmp(r *memory.Registers, args []uint16) {
-	target := memory.ReadVal(r, args[0])
-	jump(r, target)
+func Jmp(m *memory.Memory, args []uint16) {
+	target := memory.ReadVal(m, args[0])
+	jump(m, target)
 }
 
-func Jt(r *memory.Registers, args []uint16) {
-	a, b := memory.ReadVal(r, args[0]), memory.ReadVal(r, args[1])
+func Jt(m *memory.Memory, args []uint16) {
+	a, b := memory.ReadVal(m, args[0]), memory.ReadVal(m, args[1])
 	if a != 0 {
-		jump(r, b)
+		jump(m, b)
 	}
 }
 
-func Jf(r *memory.Registers, args []uint16) {
-	a, b := memory.ReadVal(r, args[0]), memory.ReadVal(r, args[1])
+func Jf(m *memory.Memory, args []uint16) {
+	a, b := memory.ReadVal(m, args[0]), memory.ReadVal(m, args[1])
 	if a == 0 {
-		jump(r, b)
+		jump(m, b)
 	}
 }

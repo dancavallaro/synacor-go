@@ -12,13 +12,15 @@ import (
 type opRef struct {
 	opcode   uint16
 	nArgs    int
-	execute  func(registers *memory.Registers, args []uint16)
+	execute  func(registers *memory.Memory, args []uint16)
 	mnemonic string
 }
 
 var ops = []opRef{
 	{0, 0, op.Halt, "halt"},
 	{1, 2, op.Set, "set"},
+	{2, 1, op.Push, "push"},
+	{3, 1, op.Pop, "pop"},
 	{4, 3, op.Eq, "eq"},
 	{6, 1, op.Jmp, "jmp"},
 	{7, 2, op.Jt, "jt"},
@@ -45,7 +47,7 @@ type ExecutionOptions struct {
 }
 
 func Execute(bin []byte, opts *ExecutionOptions) error {
-	r := memory.Registers{}
+	r := memory.Memory{}
 	for r.PC = 0; r.PC < len(bin)-1; {
 		pc := r.PC
 		w := readWord(bin, r.PC)

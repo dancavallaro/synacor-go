@@ -9,16 +9,30 @@ const (
 	NumRegisters = 8
 )
 
-type Registers struct {
-	PC int
-	GP [NumRegisters]uint16
+type Memory struct {
+	PC    int
+	GP    [NumRegisters]uint16
+	Stack []uint16
 }
 
-func ReadVal(r *Registers, arg uint16) uint16 {
+func (m *Memory) Push(val uint16) {
+	m.Stack = append(m.Stack, val)
+}
+
+func (m *Memory) Pop() uint16 {
+	if len(m.Stack) == 0 {
+		log.Panicln("stack underflow!")
+	}
+	val := m.Stack[len(m.Stack)-1]
+	m.Stack = m.Stack[0 : len(m.Stack)-1]
+	return val
+}
+
+func ReadVal(m *Memory, arg uint16) uint16 {
 	if arg >= RegOffset+NumRegisters {
 		log.Panicf("arg %d is not a valid value (literal or register)", arg)
 	} else if arg >= RegOffset {
-		return r.GP[arg-RegOffset]
+		return m.GP[arg-RegOffset]
 	}
 	return arg
 }
