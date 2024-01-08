@@ -77,3 +77,53 @@ func (h OutputView) Init(v *gocui.View) {
 }
 
 func (h OutputView) Draw(_ *gocui.View) {}
+
+type DisassemblyView struct{}
+
+func (h DisassemblyView) Init(v *gocui.View) {
+	v.Title = "Disassembly"
+}
+
+func (h DisassemblyView) Draw(_ *gocui.View) {
+	// TODO
+}
+
+type MemoryView struct {
+	m *memory.Memory
+}
+
+func (h MemoryView) Init(v *gocui.View) {
+	v.Title = "Memory"
+}
+
+func (h MemoryView) Draw(v *gocui.View) {
+	v.Clear()
+	if h.m != nil {
+		// TODO: Make this dynamic based on size of view?
+		// TODO: Or at least center it in the panel
+		lineLength := 16
+
+		_, y := v.Size()
+		fmt.Fprintln(v)
+		for line := 0; line < y-2; line++ {
+			startAddr := h.m.PC + lineLength*line
+			drawMemLine(v, startAddr, h.m.Mem[startAddr:startAddr+16])
+		}
+	}
+}
+
+func drawMemLine(v *gocui.View, startAddr int, mem []uint16) {
+	fmt.Fprintf(v, "  %#04x:  ", startAddr)
+	for _, w := range mem {
+		fmt.Fprintf(v, "%04x ", w) // TODO: Support toggling units, refactor that code
+	}
+	fmt.Fprintf(v, "  ")
+	for _, w := range mem {
+		ch := '.'
+		if w >= 32 && w <= 126 {
+			ch = rune(w)
+		}
+		fmt.Fprint(v, string(ch))
+	}
+	fmt.Fprint(v, "\n")
+}

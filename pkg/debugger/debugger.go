@@ -27,13 +27,25 @@ func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
 	return nil
 }
 
+func mult(base int, fraction float32) int {
+	return int(fraction * float32(base))
+}
+
 func (d Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	if err := drawView(g, OutputView{}, "output", 0, 0, maxX-1, maxY-7); err != nil {
+	if err := drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5)); err != nil {
 		return err
 	}
 	if _, err := g.SetCurrentView("output"); err != nil {
+		return err
+	}
+
+	if err := drawView(g, MemoryView{&d.VM.M}, "memory", 0, mult(maxY-7, 0.5)+1, mult(maxX, 0.75), maxY-7); err != nil {
+		return err
+	}
+
+	if err := drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, 0, maxX-1, maxY-7); err != nil {
 		return err
 	}
 

@@ -114,7 +114,7 @@ func (vm *VM) Step() error {
 }
 
 func (vm *VM) Execute() error {
-	for vm.M.PC = 0; vm.M.PC < len(vm.M.Mem); {
+	for vm.M.PC < len(vm.M.Mem) {
 		if err := vm.Step(); err != nil {
 			return err
 		}
