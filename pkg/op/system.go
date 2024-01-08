@@ -1,7 +1,6 @@
 package op
 
 import (
-	"dancavallaro.com/synacor-go/internal/util"
 	"dancavallaro.com/synacor-go/pkg/memory"
 	"fmt"
 	"io"
@@ -24,6 +23,6 @@ func Out(_ *memory.Memory, args []uint16) {
 }
 
 func In(m *memory.Memory, args []uint16) {
-	a := memory.RegNum(args[0])
-	m.GP[a] = util.ReadChar()
+	//a := memory.RegNum(args[0])
+	//m.GP[a] = util.ReadChar()
 }

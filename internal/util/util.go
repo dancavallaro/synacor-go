@@ -1,12 +1,15 @@
 package util
 
-import "os"
+import (
+	"fmt"
+	"io"
+	"os"
+)
 
 func ReadChar() uint16 {
-	b := make([]byte, 1)
-	n, err := os.Stdin.Read(b)
-	if n != 1 || err != nil {
-		panic("error reading from stdin!")
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		panic(fmt.Sprintf("error reading from stdin: %s", err))
 	}
 	return uint16(b[0])
 }

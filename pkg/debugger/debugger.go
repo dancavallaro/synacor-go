@@ -4,14 +4,32 @@ import (
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
+	"time"
 )
 
 type Debugger struct {
-	VM *vm.VM
+	VM             *vm.VM
+	viewsToRefresh map[*gocui.View]Frame
 }
 
-func NewDebugger(VM *vm.VM) *Debugger {
-	return &Debugger{VM}
+func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
+	debug := &Debugger{VM, make(map[*gocui.View]Frame)}
+	go debug.refreshUI(g)
+	return debug
+}
+
+func (d Debugger) refreshUI(g *gocui.Gui) {
+	for {
+		select {
+		case <-time.After(100 * time.Millisecond):
+			g.Update(func(g *gocui.Gui) error {
+				for v, f := range d.viewsToRefresh {
+					f.Draw(v)
+				}
+				return nil
+			})
+		}
+	}
 }
 
 func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
@@ -34,30 +52,30 @@ func mult(base int, fraction float32) int {
 func (d Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	if err := drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5)); err != nil {
+	if err := d.drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5), false); err != nil {
 		return err
 	}
 	if _, err := g.SetCurrentView("output"); err != nil {
 		return err
 	}
 
-	if err := drawView(g, MemoryView{&d.VM.M}, "memory", 0, mult(maxY-7, 0.5)+1, mult(maxX, 0.75), maxY-7); err != nil {
+	if err := d.drawView(g, MemoryView{&d.VM.M}, "memory", 0, mult(maxY-7, 0.5)+1, mult(maxX, 0.75), maxY-7, true); err != nil {
 		return err
 	}
 
-	if err := drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, 0, maxX-1, maxY-7); err != nil {
+	if err := d.drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, 0, maxX-1, maxY-7, true); err != nil {
 		return err
 	}
 
-	if err := drawView(g, StackView{&d.VM.M}, "stack", -1, maxY-6, maxX, maxY-4); err != nil {
+	if err := d.drawView(g, StackView{&d.VM.M}, "stack", -1, maxY-6, maxX, maxY-4, true); err != nil {
 		return err
 	}
 
-	if err := drawView(g, RegisterView{&d.VM.M}, "registers", -1, maxY-4, maxX, maxY-2); err != nil {
+	if err := d.drawView(g, RegisterView{&d.VM.M}, "registers", -1, maxY-4, maxX, maxY-2, true); err != nil {
 		return err
 	}
 
-	if err := drawView(g, HelpView{}, "help", -1, maxY-2, maxX, maxY); err != nil {
+	if err := d.drawView(g, HelpView{}, "help", -1, maxY-2, maxX, maxY, false); err != nil {
 		return err
 	}
 
@@ -69,7 +87,7 @@ type Frame interface {
 	Draw(v *gocui.View)
 }
 
-func drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int) error {
+func (d Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int, refresh bool) error {
 	var v *gocui.View
 	var err error
 	if v, err = g.SetView(name, x0, y0, x1, y1, 0); err != nil {
@@ -77,6 +95,9 @@ func drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int) error {
 			return err
 		}
 		f.Init(v)
+		if refresh {
+			d.viewsToRefresh[v] = f
+		}
 	}
 	f.Draw(v)
 

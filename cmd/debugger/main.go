@@ -38,7 +38,7 @@ func main() {
 		Breakpoint: -1,
 	}
 	vm := vm.NewVM(binary, &opts)
-	debug := debugger.NewDebugger(vm)
+	debug := debugger.NewDebugger(vm, gui)
 	if err != nil {
 		log.Fatalln(err)
 	}
