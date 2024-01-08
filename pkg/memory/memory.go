@@ -13,7 +13,7 @@ type Memory struct {
 	PC    int
 	GP    [NumRegisters]uint16
 	Stack []uint16
-	Mem   [1 << 16]uint16
+	Mem   [1 << 15]uint16
 }
 
 func (m *Memory) Push(val uint16) {
@@ -27,17 +27,6 @@ func (m *Memory) Pop() uint16 {
 	val := m.Stack[len(m.Stack)-1]
 	m.Stack = m.Stack[0 : len(m.Stack)-1]
 	return val
-}
-
-func (m *Memory) ReadWord(addr uint16) uint16 {
-	byteAddr := addr * 2
-	return (m.Mem[byteAddr+1] << 8) + m.Mem[byteAddr]
-}
-
-func (m *Memory) WriteWord(addr uint16, word uint16) {
-	byteAddr := addr * 2
-	m.Mem[byteAddr] = word & 0xFF
-	m.Mem[byteAddr+1] = (word & 0xFF00) >> 8
 }
 
 func ReadVal(m *Memory, arg uint16) uint16 {

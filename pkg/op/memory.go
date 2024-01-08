@@ -19,10 +19,10 @@ func Pop(m *memory.Memory, args []uint16) {
 
 func Rmem(m *memory.Memory, args []uint16) {
 	a, b := memory.RegNum(args[0]), memory.ReadVal(m, args[1])
-	m.GP[a] = m.ReadWord(b)
+	m.GP[a] = m.Mem[b]
 }
 
 func Wmem(m *memory.Memory, args []uint16) {
 	a, b := memory.ReadVal(m, args[0]), memory.ReadVal(m, args[1])
-	m.WriteWord(a, b)
+	m.Mem[a] = b
 }

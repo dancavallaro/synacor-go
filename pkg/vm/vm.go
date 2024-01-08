@@ -72,7 +72,7 @@ func NewVM(bin []byte, opts *ExecutionOptions) *VM {
 
 func (vm *VM) Step() error {
 	pc := vm.M.PC // Save original PC value
-	w := vm.M.ReadWord(uint16(vm.M.PC))
+	w := vm.M.Mem[vm.M.PC]
 	vm.M.PC += 1
 	o, ok := opRefs[w]
 	if !ok {
@@ -81,7 +81,7 @@ func (vm *VM) Step() error {
 
 	var args []uint16
 	for arg := 1; arg <= o.nArgs; arg++ {
-		w := vm.M.ReadWord(uint16(vm.M.PC))
+		w := vm.M.Mem[vm.M.PC]
 		vm.M.PC += 1
 		args = append(args, w)
 	}
@@ -124,7 +124,9 @@ func (vm *VM) Execute() error {
 }
 
 func loadProgram(r *memory.Memory, bin []byte) {
-	for i, b := range bin {
-		r.Mem[i] = uint16(b)
+	for i := 0; i < len(bin)-1; {
+		low, high := uint16(bin[i]), uint16(bin[i+1])
+		r.Mem[i/2] = (high << 8) + low
+		i += 2
 	}
 }
