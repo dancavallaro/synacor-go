@@ -11,7 +11,7 @@ type HelpView struct{}
 
 func (h HelpView) Init(v *gocui.View) {
 	v.Title = "Help"
-	fmt.Fprint(v, "(r) resume execution\t(x) toggle hex/dec")
+	fmt.Fprint(v, "(r) resume execution\t(s) step execution\t(x) toggle hex/dec")
 }
 
 func (h HelpView) Draw(_ *gocui.View) {}

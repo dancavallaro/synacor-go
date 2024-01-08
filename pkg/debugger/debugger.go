@@ -18,6 +18,9 @@ func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", 'r', gocui.ModNone, d.execute); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding("", 's', gocui.ModNone, d.step); err != nil {
+		return err
+	}
 	if err := gui.SetKeybinding("", 'x', gocui.ModNone, toggleBase); err != nil {
 		return err
 	}
@@ -71,6 +74,10 @@ func drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int) error {
 func (d Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
 	go d.VM.Execute()
 	return nil
+}
+
+func (d Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
+	return d.VM.Step()
 }
 
 type base int
