@@ -18,6 +18,9 @@ func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", 'r', gocui.ModNone, d.execute); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding("", 'x', gocui.ModNone, toggleBase); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -63,5 +66,23 @@ func drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int) error {
 
 func (d Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
 	go d.VM.Execute()
+	return nil
+}
+
+type base int
+
+const (
+	hex base = iota
+	dec
+)
+
+var displayBase = hex
+
+func toggleBase(_ *gocui.Gui, _ *gocui.View) error {
+	if displayBase == hex {
+		displayBase = dec
+	} else {
+		displayBase = hex
+	}
 	return nil
 }
