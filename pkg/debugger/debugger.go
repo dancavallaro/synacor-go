@@ -1,11 +1,8 @@
 package debugger
 
 import (
-	"dancavallaro.com/synacor-go/pkg/memory"
-	"dancavallaro.com/synacor-go/pkg/op"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
-	"fmt"
 	"github.com/awesome-gocui/gocui"
 )
 
@@ -24,50 +21,44 @@ func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
 	return nil
 }
 
-func (d Debugger) Layout(gui *gocui.Gui) error {
-	maxX, maxY := gui.Size()
+func (d Debugger) Layout(g *gocui.Gui) error {
+	maxX, maxY := g.Size()
 
-	if v, err := gui.SetView("output", 0, 0, maxX-1, maxY-5, 0); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		if _, err := gui.SetCurrentView("output"); err != nil {
-			return err
-		}
-		v.Title = "Output"
-		op.Output = v
+	if err := drawView(g, OutputView{}, "output", 0, 0, maxX-1, maxY-5); err != nil {
+		return err
+	}
+	if _, err := g.SetCurrentView("output"); err != nil {
+		return err
 	}
 
-	var regView *gocui.View
-	var err error
-	if regView, err = gui.SetView("registers", -1, maxY-4, maxX, maxY-2, 0); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		regView.Title = "Registers"
+	if err := drawView(g, RegisterView{&d.VM.M}, "registers", -1, maxY-4, maxX, maxY-2); err != nil {
+		return err
 	}
-	regView.Clear()
-	d.drawRegisters(regView)
 
-	if v, err := gui.SetView("help", -1, maxY-2, maxX, maxY, 0); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = "Help"
-		fmt.Fprint(v, "r: resume execution")
+	if err := drawView(g, HelpView{}, "help", -1, maxY-2, maxX, maxY); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (d Debugger) drawRegisters(v *gocui.View) {
-	pc := d.VM.M.PC
-	fmt.Fprintf(v, "PC: %#04x\t", pc)
+type Frame interface {
+	Init(v *gocui.View)
+	Draw(v *gocui.View)
+}
 
-	gp := d.VM.M.GP
-	for i := 0; i < memory.NumRegisters; i++ {
-		fmt.Fprintf(v, "R%d: %#04x\t", i, gp[i])
+func drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int) error {
+	var v *gocui.View
+	var err error
+	if v, err = g.SetView(name, x0, y0, x1, y1, 0); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		f.Init(v)
 	}
+	f.Draw(v)
+
+	return nil
 }
 
 func (d Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
