@@ -27,10 +27,14 @@ func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
 func (d Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	if err := drawView(g, OutputView{}, "output", 0, 0, maxX-1, maxY-5); err != nil {
+	if err := drawView(g, OutputView{}, "output", 0, 0, maxX-1, maxY-7); err != nil {
 		return err
 	}
 	if _, err := g.SetCurrentView("output"); err != nil {
+		return err
+	}
+
+	if err := drawView(g, StackView{&d.VM.M}, "stack", -1, maxY-6, maxX, maxY-4); err != nil {
 		return err
 	}
 

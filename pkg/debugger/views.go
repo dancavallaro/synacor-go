@@ -42,6 +42,33 @@ func (h RegisterView) Draw(v *gocui.View) {
 	}
 }
 
+type StackView struct {
+	m *memory.Memory
+}
+
+func (h StackView) Init(v *gocui.View) {
+	v.Title = "Stack"
+}
+
+func (h StackView) Draw(v *gocui.View) {
+	v.Clear()
+
+	for i := 0; i < len(h.m.Stack); i++ {
+		if displayBase == hex {
+			fmt.Fprintf(v, "%#04x", h.m.Stack[i])
+		} else {
+			fmt.Fprintf(v, "%06d", h.m.Stack[i])
+		}
+		if i < len(h.m.Stack)-1 {
+			fmt.Fprintf(v, "\t")
+		} else {
+			fmt.Fprintf(v, " ")
+		}
+	}
+
+	fmt.Fprint(v, "◄SP")
+}
+
 type OutputView struct{}
 
 func (h OutputView) Init(v *gocui.View) {
