@@ -62,7 +62,44 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", 'x', gocui.ModNone, toggleBase); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding("", 'm', gocui.ModNone, message); err != nil {
+		return err
+	}
 	return nil
+}
+
+func message(g *gocui.Gui, _ *gocui.View) error {
+	output, err := g.View("output")
+	if err != nil {
+		// TODO: Don't panic
+		panic(err)
+	}
+
+	maxX, maxY := output.Size()
+	if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Editable = true
+		v.Title = "Enter a character:"
+		if _, err := g.SetCurrentView("msg"); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func readInput(_ *gocui.Gui, v *gocui.View) error {
+	var l string
+	var err error
+	_, cy := v.Cursor()
+	if l, err = v.Line(cy); err != nil {
+		return err
+	}
+	panic(l) // TODO: do whatever with the input here
 }
 
 func mult(base int, fraction float32) int {
@@ -73,9 +110,6 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
 	if err := d.drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5), false); err != nil {
-		return err
-	}
-	if _, err := g.SetCurrentView("output"); err != nil {
 		return err
 	}
 
