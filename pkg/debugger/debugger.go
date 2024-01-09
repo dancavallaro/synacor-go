@@ -7,18 +7,27 @@ import (
 	"time"
 )
 
+type State int
+
+const (
+	Paused State = iota
+	Running
+)
+
 type Debugger struct {
 	VM             *vm.VM
 	viewsToRefresh map[*gocui.View]Frame
+	state          State
 }
 
 func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
-	debug := &Debugger{VM, make(map[*gocui.View]Frame)}
+	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused}
 	go debug.refreshUI(g)
+	go debug.executeWhenRunning()
 	return debug
 }
 
-func (d Debugger) refreshUI(g *gocui.Gui) {
+func (d *Debugger) refreshUI(g *gocui.Gui) {
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
@@ -32,7 +41,18 @@ func (d Debugger) refreshUI(g *gocui.Gui) {
 	}
 }
 
-func (d Debugger) InitKeybindings(gui *gocui.Gui) error {
+func (d *Debugger) executeWhenRunning() {
+	for {
+		if d.state == Running {
+			if err := d.VM.Step(); err != nil {
+				// TODO: Don't panic, this should return an error to the debugger
+				panic(err)
+			}
+		}
+	}
+}
+
+func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", 'r', gocui.ModNone, d.execute); err != nil {
 		return err
 	}
@@ -49,7 +69,7 @@ func mult(base int, fraction float32) int {
 	return int(fraction * float32(base))
 }
 
-func (d Debugger) Layout(g *gocui.Gui) error {
+func (d *Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
 	if err := d.drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5), false); err != nil {
@@ -87,7 +107,7 @@ type Frame interface {
 	Draw(v *gocui.View)
 }
 
-func (d Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int, refresh bool) error {
+func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int, refresh bool) error {
 	var v *gocui.View
 	var err error
 	if v, err = g.SetView(name, x0, y0, x1, y1, 0); err != nil {
@@ -104,12 +124,12 @@ func (d Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 in
 	return nil
 }
 
-func (d Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
-	go d.VM.Execute()
+func (d *Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
+	d.state = Running
 	return nil
 }
 
-func (d Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
+func (d *Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
 	return d.VM.Step()
 }
 
