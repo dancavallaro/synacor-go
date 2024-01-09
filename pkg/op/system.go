@@ -11,6 +11,7 @@ import (
 
 // TODO: add halt
 // TODO: add log
+// TODO: move this to vm.go?
 var Environment = struct {
 	Output   io.Writer
 	ReadChar func() (uint16, error)
