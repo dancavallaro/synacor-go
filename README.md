@@ -7,10 +7,6 @@ been working from the archive at https://github.com/Aneurysm9/vm_challenge/tree/
 
 ## TODOs
 
-- Refactor to introduce "environment" concept with methods like
-  Log/Halt/ReadInput, with different impls for VM vs. Debugger.
-- Fix weird issue with reading from stdin, and make it work in the debugger.
-- Implement scrolling in output view
 - Finish TODOs for displaying memory contents
 - Display disassembled program
 - Keybindings to:

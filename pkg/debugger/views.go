@@ -1,10 +1,11 @@
 package debugger
 
 import (
+	"dancavallaro.com/synacor-go/pkg/env"
 	"dancavallaro.com/synacor-go/pkg/memory"
-	"dancavallaro.com/synacor-go/pkg/op"
 	"fmt"
 	"github.com/awesome-gocui/gocui"
+	"log"
 )
 
 type HelpView struct{}
@@ -73,10 +74,21 @@ type OutputView struct{}
 
 func (h OutputView) Init(v *gocui.View) {
 	v.Title = "Output"
-	op.Output = v
+	v.Autoscroll = true
+	env.Config.Output = v
 }
 
 func (h OutputView) Draw(_ *gocui.View) {}
+
+type LogView struct{}
+
+func (h LogView) Init(v *gocui.View) {
+	v.Title = "System Log"
+	v.Autoscroll = true
+	log.Default().SetOutput(v)
+}
+
+func (h LogView) Draw(_ *gocui.View) {}
 
 type DisassemblyView struct{}
 

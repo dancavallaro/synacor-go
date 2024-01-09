@@ -7,13 +7,17 @@ import (
 	"flag"
 	"github.com/awesome-gocui/gocui"
 	"log"
+	"net/http"
+	_ "net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
 const required = "<required>"
 
 var (
-	binPath = flag.String("bin", required, "Path to executable (.bin)")
+	binPath     = flag.String("bin", required, "Path to executable (.bin)")
+	enableDebug = flag.Bool("debug", false, "Enable Go debug server on port 6060")
 )
 
 func main() {
@@ -43,9 +47,16 @@ func main() {
 		log.Fatalln(err)
 	}
 	gui.SetManagerFunc(debug.Layout)
+	gui.Cursor = true
 	err = debug.InitKeybindings(gui)
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	if *enableDebug {
+		go func() {
+			http.ListenAndServe("localhost:6060", nil)
+		}()
 	}
 
 	if err := gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, exit); err != nil {
