@@ -1,6 +1,7 @@
 package debugger
 
 import (
+	"dancavallaro.com/synacor-go/pkg/op"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
@@ -24,6 +25,7 @@ func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
 	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused}
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
+	op.Environment.ReadChar = requestInput(g)
 	return debug
 }
 
@@ -62,44 +64,50 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", 'x', gocui.ModNone, toggleBase); err != nil {
 		return err
 	}
-	if err := gui.SetKeybinding("", 'm', gocui.ModNone, message); err != nil {
-		return err
-	}
 	return nil
 }
 
-func message(g *gocui.Gui, _ *gocui.View) error {
-	output, err := g.View("output")
-	if err != nil {
-		// TODO: Don't panic
-		panic(err)
-	}
+func requestInput(g *gocui.Gui) func() (uint16, error) {
+	return func() (uint16, error) {
+		output, err := g.View("output")
+		if err != nil {
+			return 0, err
+		}
 
-	maxX, maxY := output.Size()
-	if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
+		inCh := make(chan uint16)
+		maxX, maxY := output.Size()
+		if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
+			if !errors.Is(err, gocui.ErrUnknownView) {
+				return 0, err
+			}
+			v.Editable = true
+			v.Title = "Enter a character:"
+			if _, err := g.SetCurrentView("msg"); err != nil {
+				return 0, err
+			}
+			if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput(inCh)); err != nil {
+				return 0, err
+			}
 		}
-		v.Editable = true
-		v.Title = "Enter a character:"
-		if _, err := g.SetCurrentView("msg"); err != nil {
-			return err
-		}
-		if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput); err != nil {
-			return err
+
+		select {
+		case input := <-inCh:
+			return input, nil
 		}
 	}
-	return nil
 }
 
-func readInput(_ *gocui.Gui, v *gocui.View) error {
-	var l string
-	var err error
-	_, cy := v.Cursor()
-	if l, err = v.Line(cy); err != nil {
-		return err
+func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
+	return func(_ *gocui.Gui, v *gocui.View) error {
+		var l string
+		var err error
+		_, cy := v.Cursor()
+		if l, err = v.Line(cy); err != nil {
+			return err
+		}
+		input <- uint16(l[0])
+		return nil
 	}
-	panic(l) // TODO: do whatever with the input here
 }
 
 func mult(base int, fraction float32) int {
