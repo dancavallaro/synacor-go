@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awesome-gocui/gocui"
+	"strings"
 	"time"
 )
 
@@ -91,6 +92,8 @@ func requestInput(g *gocui.Gui) func() (uint16, error) {
 			}
 		}
 
+		go cleanup(g)
+
 		//select {
 		//case input := <-inCh:
 		//	return input, nil
@@ -99,24 +102,63 @@ func requestInput(g *gocui.Gui) func() (uint16, error) {
 	}
 }
 
+func containsView(vs []*gocui.View, name string) bool {
+	for _, view := range vs {
+		if view.Name() == name {
+			return true
+		}
+	}
+	return false
+}
+
+func toString(vs []*gocui.View) string {
+	sb := strings.Builder{}
+	for _, view := range vs {
+		sb.WriteString(view.Name())
+		sb.WriteString(" | ")
+	}
+	return sb.String()
+}
+
+func cleanup(g *gocui.Gui) error {
+	time.Sleep(5 * time.Second)
+	panic(toString(g.Views()))
+	if !containsView(g.Views(), "msg") {
+		panic("wtf?")
+	}
+	_, err := g.View("msg")
+	if err != nil {
+		panic(err)
+	}
+	if err := g.DeleteView("msg"); err != nil {
+		panic(fmt.Sprintf("error deleting msg: %v", err))
+		return err
+	}
+	if _, err := g.SetCurrentView("output"); err != nil {
+		panic(fmt.Sprintf("error making output current: %v", err))
+		return err
+	}
+	return nil
+}
+
 func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
-		var l string
-		var err error
-		_, cy := v.Cursor()
-		if l, err = v.Line(cy); err != nil {
-			return err
-		}
-		fmt.Println(l) // TODO
-		//input <- uint16(l[0])
-		if err := g.DeleteView("msg"); err != nil {
-			panic("foo")
-			return err
-		}
-		if _, err := g.SetCurrentView("output"); err != nil {
-			panic("bar")
-			return err
-		}
+		//var l string
+		//var err error
+		//_, cy := v.Cursor()
+		//if l, err = v.Line(cy); err != nil {
+		//	return err
+		//}
+		//fmt.Println(l) // TODO
+		////input <- uint16(l[0])
+		//if err := g.DeleteView("msg"); err != nil {
+		//	panic("foo")
+		//	return err
+		//}
+		//if _, err := g.SetCurrentView("output"); err != nil {
+		//	panic("bar")
+		//	return err
+		//}
 		return nil
 	}
 }
