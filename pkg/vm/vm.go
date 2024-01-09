@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"dancavallaro.com/synacor-go/internal/util"
 	"dancavallaro.com/synacor-go/pkg/memory"
 	"dancavallaro.com/synacor-go/pkg/op"
 	"errors"
@@ -88,20 +87,9 @@ func (vm *VM) Step() error {
 
 	if vm.Options.Breakpoint >= 0 && pc == vm.Options.Breakpoint {
 		vm.Options.Trace = true
-		vm.stepDebugging = true
 	}
 	if vm.Options.Trace {
-		prefix := ""
-		if vm.stepDebugging {
-			prefix = "(step, r to resume) "
-		}
-		log.Printf("%s[PC=%d (0x%x)] %d (%s): %v", prefix, pc, pc, o.opcode, o.mnemonic, args)
-	}
-	if vm.stepDebugging {
-		ch := util.ReadChar()
-		if ch == 'r' {
-			vm.stepDebugging = false
-		}
+		log.Printf("[PC=%d (0x%x)] %d (%s): %v", pc, pc, o.opcode, o.mnemonic, args)
 	}
 
 	o.execute(&vm.M, args)
