@@ -1,19 +1,14 @@
 package util
 
 import (
-	"fmt"
 	"io"
 	"os"
 )
 
-func ReadChar() uint16 {
+func ReadChar() (uint16, error) {
 	b, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		panic(fmt.Sprintf("error reading from stdin: %s", err))
+		return 0, err
 	}
-	return uint16(b[0])
-}
-
-func WaitForEnter() {
-	ReadChar()
+	return uint16(b[0]), nil
 }

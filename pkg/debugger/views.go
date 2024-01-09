@@ -73,7 +73,7 @@ type OutputView struct{}
 
 func (h OutputView) Init(v *gocui.View) {
 	v.Title = "Output"
-	op.Output = v
+	op.Environment.Output = v
 }
 
 func (h OutputView) Draw(_ *gocui.View) {}
