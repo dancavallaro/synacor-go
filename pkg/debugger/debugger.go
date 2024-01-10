@@ -1,7 +1,7 @@
 package debugger
 
 import (
-	"dancavallaro.com/synacor-go/pkg/op"
+	"dancavallaro.com/synacor-go/pkg/env"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
@@ -25,7 +25,7 @@ func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
 	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused}
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
-	op.Environment.ReadChar = requestInput(g, debug)
+	env.Config.ReadChar = requestInput(g, debug)
 	return debug
 }
 
@@ -125,16 +125,21 @@ func mult(base int, fraction float32) int {
 
 func (d *Debugger) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
+	midY := mult(maxY-7, 0.5)
 
-	if err := d.drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), mult(maxY-7, 0.5), false); err != nil {
+	if err := d.drawView(g, OutputView{}, "output", 0, 0, mult(maxX, 0.75), midY, false); err != nil {
 		return err
 	}
 
-	if err := d.drawView(g, MemoryView{&d.VM.M}, "memory", 0, mult(maxY-7, 0.5)+1, mult(maxX, 0.75), maxY-7, true); err != nil {
+	if err := d.drawView(g, MemoryView{&d.VM.M}, "memory", 0, midY+1, mult(maxX, 0.75), maxY-7, true); err != nil {
 		return err
 	}
 
-	if err := d.drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, 0, maxX-1, maxY-7, true); err != nil {
+	if err := d.drawView(g, LogView{}, "log", int(0.75*float32(maxX))+1, 0, maxX-1, midY, true); err != nil {
+		return err
+	}
+
+	if err := d.drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, midY+1, maxX-1, maxY-7, true); err != nil {
 		return err
 	}
 
