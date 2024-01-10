@@ -1,17 +1,15 @@
 package util
 
 import (
-	"fmt"
-	"io"
+	"bufio"
 	"os"
 )
 
 func ReadChar() (uint16, error) {
-	fmt.Println("about to read")
-	b, err := io.ReadAll(os.Stdin)
-	fmt.Println("just read")
+	reader := bufio.NewReader(os.Stdin)
+	ch, _, err := reader.ReadRune()
 	if err != nil {
 		return 0, err
 	}
-	return uint16(b[0]), nil
+	return uint16(ch), nil
 }
