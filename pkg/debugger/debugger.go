@@ -4,9 +4,7 @@ import (
 	"dancavallaro.com/synacor-go/pkg/op"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
-	"fmt"
 	"github.com/awesome-gocui/gocui"
-	"strings"
 	"time"
 )
 
@@ -27,7 +25,7 @@ func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
 	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused}
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
-	op.Environment.ReadChar = requestInput(g)
+	op.Environment.ReadChar = requestInput(g, debug)
 	return debug
 }
 
@@ -69,7 +67,7 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	return nil
 }
 
-func requestInput(g *gocui.Gui) func() (uint16, error) {
+func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 	return func() (uint16, error) {
 		output, err := g.View("output")
 		if err != nil {
@@ -91,11 +89,8 @@ func requestInput(g *gocui.Gui) func() (uint16, error) {
 				return 0, err
 			}
 		}
-
-		time.Sleep(2 * time.Second)
-		cleanup(g)
-
-		//go cleanup(g)
+		// TODO: delete
+		debugger.state = Paused
 
 		//select {
 		//case input := <-inCh:
@@ -103,48 +98,6 @@ func requestInput(g *gocui.Gui) func() (uint16, error) {
 		//}
 		return 69, nil
 	}
-}
-
-func containsView(vs []*gocui.View, name string) bool {
-	for _, view := range vs {
-		if view.Name() == name {
-			return true
-		}
-	}
-	return false
-}
-
-func toString(vs []*gocui.View, g *gocui.Gui) string {
-	sb := strings.Builder{}
-	for _, view := range vs {
-		if view.Name() == "msg" {
-			g.DeleteView("msg")
-		}
-		sb.WriteString(fmt.Sprintf("%v", []rune(view.Name())))
-		sb.WriteString(" | ")
-	}
-	return sb.String()
-}
-
-func cleanup(g *gocui.Gui) error {
-	//time.Sleep(5 * time.Second)
-	//panic(toString(g.Views(), g))
-	//if !containsView(g.Views(), "msg") {
-	//	//panic("wtf?")
-	//}
-	//_, err := g.View("msg")
-	//if err != nil {
-	//	//panic(err)
-	//}
-	if err := g.DeleteView("msg"); err != nil {
-		//panic(fmt.Sprintf("error deleting msg: %v", err))
-		return err
-	}
-	if _, err := g.SetCurrentView("output"); err != nil {
-		//panic(fmt.Sprintf("error making output current: %v", err))
-		return err
-	}
-	return nil
 }
 
 func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
