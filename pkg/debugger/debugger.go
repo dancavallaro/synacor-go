@@ -92,32 +92,29 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		// TODO: delete
 		debugger.state = Paused
 
-		//select {
-		//case input := <-inCh:
-		//	return input, nil
-		//}
-		return 69, nil
+		select {
+		case input := <-inCh:
+			return input, nil
+		}
+		//return 69, nil
 	}
 }
 
 func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
-		//var l string
-		//var err error
-		//_, cy := v.Cursor()
-		//if l, err = v.Line(cy); err != nil {
-		//	return err
-		//}
-		//fmt.Println(l) // TODO
-		////input <- uint16(l[0])
-		//if err := g.DeleteView("msg"); err != nil {
-		//	panic("foo")
-		//	return err
-		//}
-		//if _, err := g.SetCurrentView("output"); err != nil {
-		//	panic("bar")
-		//	return err
-		//}
+		var l string
+		var err error
+		_, cy := v.Cursor()
+		if l, err = v.Line(cy); err != nil {
+			return err
+		}
+		input <- uint16(l[0])
+		if err := g.DeleteView("msg"); err != nil {
+			return err
+		}
+		if _, err := g.SetCurrentView("output"); err != nil {
+			return err
+		}
 		return nil
 	}
 }

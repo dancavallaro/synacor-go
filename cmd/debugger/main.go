@@ -7,6 +7,9 @@ import (
 	"flag"
 	"github.com/awesome-gocui/gocui"
 	"log"
+	"net/http"
+	_ "net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -48,6 +51,10 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 
 	if err := gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, exit); err != nil {
 		log.Fatalln(err)
