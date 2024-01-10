@@ -92,7 +92,10 @@ func requestInput(g *gocui.Gui) func() (uint16, error) {
 			}
 		}
 
-		go cleanup(g)
+		time.Sleep(2 * time.Second)
+		cleanup(g)
+
+		//go cleanup(g)
 
 		//select {
 		//case input := <-inCh:
@@ -111,31 +114,34 @@ func containsView(vs []*gocui.View, name string) bool {
 	return false
 }
 
-func toString(vs []*gocui.View) string {
+func toString(vs []*gocui.View, g *gocui.Gui) string {
 	sb := strings.Builder{}
 	for _, view := range vs {
-		sb.WriteString(view.Name())
+		if view.Name() == "msg" {
+			g.DeleteView("msg")
+		}
+		sb.WriteString(fmt.Sprintf("%v", []rune(view.Name())))
 		sb.WriteString(" | ")
 	}
 	return sb.String()
 }
 
 func cleanup(g *gocui.Gui) error {
-	time.Sleep(5 * time.Second)
-	panic(toString(g.Views()))
-	if !containsView(g.Views(), "msg") {
-		panic("wtf?")
-	}
-	_, err := g.View("msg")
-	if err != nil {
-		panic(err)
-	}
+	//time.Sleep(5 * time.Second)
+	//panic(toString(g.Views(), g))
+	//if !containsView(g.Views(), "msg") {
+	//	//panic("wtf?")
+	//}
+	//_, err := g.View("msg")
+	//if err != nil {
+	//	//panic(err)
+	//}
 	if err := g.DeleteView("msg"); err != nil {
-		panic(fmt.Sprintf("error deleting msg: %v", err))
+		//panic(fmt.Sprintf("error deleting msg: %v", err))
 		return err
 	}
 	if _, err := g.SetCurrentView("output"); err != nil {
-		panic(fmt.Sprintf("error making output current: %v", err))
+		//panic(fmt.Sprintf("error making output current: %v", err))
 		return err
 	}
 	return nil
