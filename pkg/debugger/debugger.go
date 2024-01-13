@@ -13,6 +13,7 @@ type State int
 const (
 	Paused State = iota
 	Running
+	Pausing
 )
 
 type Debugger struct {
@@ -33,12 +34,17 @@ func (d *Debugger) refreshUI(g *gocui.Gui) {
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
-			g.Update(func(g *gocui.Gui) error {
-				for v, f := range d.viewsToRefresh {
-					f.Draw(v)
-				}
-				return nil
-			})
+			if d.state != Paused {
+				g.Update(func(g *gocui.Gui) error {
+					for v, f := range d.viewsToRefresh {
+						f.Draw(v)
+					}
+					return nil
+				})
+			}
+			if d.state == Pausing {
+				d.state = Paused
+			}
 		}
 	}
 }
@@ -88,9 +94,10 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 			if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput(inCh)); err != nil {
 				return 0, err
 			}
+			debugger.state = Pausing
 		}
-		// TODO: delete
-		debugger.state = Paused
+		// TODO: delete (maybe not? why not pause while waiting for input?)
+		//debugger.state = Paused
 
 		select {
 		case input := <-inCh:

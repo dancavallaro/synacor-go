@@ -52,6 +52,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// TODO delete
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
 	}()
