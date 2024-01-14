@@ -26,5 +26,6 @@ func In(m *memory.Memory, args []uint16) {
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("IN read '%s' from stdin\n", string(rune(ch)))
 	m.GP[a] = ch
 }

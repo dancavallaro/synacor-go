@@ -5,6 +5,7 @@ import (
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
+	"log"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 	Paused State = iota
 	Running
 	Pausing
+	StepOnce
 )
 
 type Debugger struct {
@@ -51,11 +53,14 @@ func (d *Debugger) refreshUI(g *gocui.Gui) {
 
 func (d *Debugger) executeWhenRunning() {
 	for {
-		if d.state == Running {
+		if d.state == Running || d.state == StepOnce {
 			if err := d.VM.Step(); err != nil {
 				// TODO: Don't panic, this should return an error to the debugger
 				panic(err)
 			}
+		}
+		if d.state == StepOnce {
+			d.state = Pausing
 		}
 	}
 }
@@ -80,21 +85,24 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 			return 0, err
 		}
 
-		inCh := make(chan uint16, 1)
+		var v *gocui.View
+		inCh := make(chan uint16)
 		maxX, maxY := output.Size()
-		if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
+		log.Println("about to create msg view")
+		if v, err = g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
 			if !errors.Is(err, gocui.ErrUnknownView) {
 				return 0, err
 			}
 			v.Editable = true
 			v.Title = "Enter a character:"
-			if _, err := g.SetCurrentView("msg"); err != nil {
-				return 0, err
-			}
 			if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput(inCh)); err != nil {
 				return 0, err
 			}
 			debugger.state = Pausing
+		}
+		v.Visible = true
+		if _, err := g.SetCurrentView("msg"); err != nil {
+			return 0, err
 		}
 		// TODO: delete (maybe not? why not pause while waiting for input?)
 		//debugger.state = Paused
@@ -103,7 +111,9 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		//case input := <-inCh:
 		//	return input, nil
 		//}
+		log.Println("About to read char from channel")
 		input := <-inCh
+		log.Printf("Read '%s' from channel\n", string(rune(input)))
 		debugger.state = Running
 		return input, nil
 		//return 69, nil
@@ -118,10 +128,14 @@ func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 		if l, err = v.Line(cy); err != nil {
 			return err
 		}
+		log.Printf("Read '%s' from stdin, writing to channel now\n", string(rune(l[0])))
 		input <- uint16(l[0])
-		if err := g.DeleteView("msg"); err != nil {
-			return err
-		}
+		log.Println("Wrote to channel")
+		//if err := g.DeleteView("msg"); err != nil {
+		//	return err
+		//}
+		v.Visible = false
+		v.Clear()
 		if _, err := g.SetCurrentView("output"); err != nil {
 			return err
 		}
@@ -196,7 +210,8 @@ func (d *Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
 }
 
 func (d *Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
-	return d.VM.Step()
+	d.state = StepOnce
+	return nil
 }
 
 type base int
