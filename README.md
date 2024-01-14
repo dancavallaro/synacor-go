@@ -8,9 +8,9 @@ been working from the archive at https://github.com/Aneurysm9/vm_challenge/tree/
 ## TODOs
 
 - Finish TODOs for displaying memory contents
+- Display number of instructions executed
 - Display disassembled program
 - Keybindings to:
-  - Reset start and restart execution
   - Set breakpoints/run until breakpoint
   - Edit registers/stack/memory
 - Assembler, to help write new example programs

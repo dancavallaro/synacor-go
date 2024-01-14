@@ -58,6 +58,7 @@ type VM struct {
 	M       memory.Memory
 	Options *ExecutionOptions
 
+	binary        []byte
 	opsExecuted   int
 	stepDebugging bool
 }
@@ -65,7 +66,8 @@ type VM struct {
 func NewVM(bin []byte, opts *ExecutionOptions) *VM {
 	vm := &VM{}
 	vm.Options = opts
-	loadProgram(&vm.M, bin)
+	vm.binary = bin
+	vm.loadProgram()
 	return vm
 }
 
@@ -111,10 +113,15 @@ func (vm *VM) Execute() error {
 	return nil
 }
 
-func loadProgram(r *memory.Memory, bin []byte) {
-	for i := 0; i < len(bin)-1; {
-		low, high := uint16(bin[i]), uint16(bin[i+1])
-		r.Mem[i/2] = (high << 8) + low
+func (vm *VM) Restart() {
+	vm.M = memory.Memory{}
+	vm.loadProgram()
+}
+
+func (vm *VM) loadProgram() {
+	for i := 0; i < len(vm.binary)-1; {
+		low, high := uint16(vm.binary[i]), uint16(vm.binary[i+1])
+		vm.M.Mem[i/2] = (high << 8) + low
 		i += 2
 	}
 }

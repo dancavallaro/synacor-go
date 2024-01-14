@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+// Magic number that will signal when an IN instruction is being canceled (e.g. during
+// a restart. Valid reads are ASCII, so this will never conflict with a real input.
+const CancelInput = 12345
+
 func Halt(_ *memory.Memory, _ []uint16) {
 	log.Println()
 	log.Println("Execution halted.")
@@ -26,5 +30,7 @@ func In(m *memory.Memory, args []uint16) {
 	if err != nil {
 		panic(err)
 	}
-	m.GP[a] = ch
+	if ch != CancelInput {
+		m.GP[a] = ch
+	}
 }

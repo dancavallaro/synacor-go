@@ -2,6 +2,7 @@ package debugger
 
 import (
 	"dancavallaro.com/synacor-go/pkg/env"
+	"dancavallaro.com/synacor-go/pkg/op"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
@@ -85,6 +86,9 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone, toggleBase); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding("", gocui.KeyCtrlBackslash, gocui.ModNone, d.restart); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -114,7 +118,9 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		g.Cursor = true
 
 		ch := <-debugger.inputCh
-		log.Printf("IN read '%s' (%d) from stdin\n", str(rune(ch)), rune(ch))
+		if ch != op.CancelInput {
+			log.Printf("IN read '%s' (%d) from stdin\n", str(rune(ch)), rune(ch))
+		}
 		return ch, nil
 	}
 }
@@ -135,14 +141,18 @@ func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 		} else {
 			input <- uint16(l[0])
 		}
-		v.Visible = false
-		v.Clear()
-		g.Cursor = false
-		if _, err := g.SetCurrentView("output"); err != nil {
-			return err
-		}
-		return nil
+		return closeModal(g, v)
 	}
+}
+
+func closeModal(g *gocui.Gui, v *gocui.View) error {
+	v.Visible = false
+	v.Clear()
+	g.Cursor = false
+	if _, err := g.SetCurrentView("output"); err != nil {
+		return err
+	}
+	return nil
 }
 
 func mult(base int, fraction float32) int {
@@ -222,6 +232,28 @@ func (d *Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
 
 func (d *Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
 	d.state = StepOnce
+	return nil
+}
+
+func (d *Debugger) restart(g *gocui.Gui, _ *gocui.View) error {
+	log.Println("Resetting state and restarting VM...")
+	d.state = Paused
+
+	o, err := g.View("output")
+	if err != nil {
+		return err
+	}
+	o.Clear()
+
+	if v := g.CurrentView(); v.Name() == "msg" {
+		d.inputCh <- op.CancelInput
+		if err := closeModal(g, v); err != nil {
+			return err
+		}
+	}
+
+	d.VM.Restart()
+
 	return nil
 }
 
