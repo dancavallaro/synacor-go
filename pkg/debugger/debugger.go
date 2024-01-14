@@ -17,6 +17,17 @@ const (
 	StepOnce
 )
 
+func (s State) String() string {
+	if s == Paused {
+		return "PAUSED"
+	} else if s == Running {
+		return "RUNNING"
+	} else if s == StepOnce {
+		return "STEP"
+	}
+	panic("unknown value of State!")
+}
+
 type Debugger struct {
 	VM             *vm.VM
 	viewsToRefresh map[*gocui.View]Frame
@@ -164,7 +175,11 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, HelpView{}, "help", -1, maxY-2, maxX, maxY, false); err != nil {
+	if err := d.drawView(g, HelpView{}, "help", -1, maxY-2, maxX-10, maxY, false); err != nil {
+		return err
+	}
+
+	if err := d.drawView(g, StateView{&d.state}, "state", maxX-10, maxY-2, maxX, maxY, true); err != nil {
 		return err
 	}
 
@@ -193,7 +208,6 @@ func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 i
 	return nil
 }
 
-// TODO: add state display
 func (d *Debugger) pause(_ *gocui.Gui, _ *gocui.View) error {
 	d.state = Paused
 	return nil

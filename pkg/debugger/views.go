@@ -100,6 +100,17 @@ func (h DisassemblyView) Draw(_ *gocui.View) {
 	// TODO
 }
 
+type StateView struct {
+	state *State
+}
+
+func (h StateView) Init(_ *gocui.View) {}
+
+func (h StateView) Draw(v *gocui.View) {
+	v.Clear()
+	fmt.Fprintf(v, "%v", *h.state)
+}
+
 type MemoryView struct {
 	m *memory.Memory
 }
