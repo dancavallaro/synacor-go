@@ -62,13 +62,13 @@ func (d *Debugger) executeWhenRunning() {
 }
 
 func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
-	if err := gui.SetKeybinding("", 'r', gocui.ModNone, d.execute); err != nil {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlR, gocui.ModNone, d.execute); err != nil {
 		return err
 	}
-	if err := gui.SetKeybinding("", 's', gocui.ModNone, d.step); err != nil {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone, d.step); err != nil {
 		return err
 	}
-	if err := gui.SetKeybinding("", 'x', gocui.ModNone, toggleBase); err != nil {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone, toggleBase); err != nil {
 		return err
 	}
 	return nil
