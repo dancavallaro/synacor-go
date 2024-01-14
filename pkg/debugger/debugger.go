@@ -14,7 +14,6 @@ type State int
 const (
 	Paused State = iota
 	Running
-	Pausing
 	StepOnce
 )
 
@@ -37,31 +36,27 @@ func (d *Debugger) refreshUI(g *gocui.Gui) {
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
-			if d.state != Paused {
-				g.Update(func(g *gocui.Gui) error {
-					for v, f := range d.viewsToRefresh {
-						f.Draw(v)
-					}
-					return nil
-				})
-			}
-			if d.state == Pausing {
-				d.state = Paused
-			}
+			g.Update(func(g *gocui.Gui) error {
+				for v, f := range d.viewsToRefresh {
+					f.Draw(v)
+				}
+				return nil
+			})
 		}
 	}
 }
 
 func (d *Debugger) executeWhenRunning() {
 	for {
-		if d.state == Running || d.state == StepOnce {
+		state := d.state
+		if state == Running || state == StepOnce {
 			if err := d.VM.Step(); err != nil {
 				// TODO: Don't panic, this should return an error to the debugger
 				panic(err)
 			}
 		}
-		if d.state == StepOnce {
-			d.state = Pausing
+		if state == StepOnce {
+			d.state = Paused
 		}
 	}
 }
