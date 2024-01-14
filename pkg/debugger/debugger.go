@@ -80,7 +80,7 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 			return 0, err
 		}
 
-		inCh := make(chan uint16)
+		inCh := make(chan uint16, 1)
 		maxX, maxY := output.Size()
 		if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
 			if !errors.Is(err, gocui.ErrUnknownView) {
@@ -99,10 +99,13 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		// TODO: delete (maybe not? why not pause while waiting for input?)
 		//debugger.state = Paused
 
-		select {
-		case input := <-inCh:
-			return input, nil
-		}
+		//select {
+		//case input := <-inCh:
+		//	return input, nil
+		//}
+		input := <-inCh
+		debugger.state = Running
+		return input, nil
 		//return 69, nil
 	}
 }
