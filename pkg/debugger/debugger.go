@@ -5,6 +5,7 @@ import (
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
 	"github.com/awesome-gocui/gocui"
+	"log"
 	"time"
 )
 
@@ -102,19 +103,20 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 			return 0, err
 		}
 
-		return <-debugger.inputCh, nil
+		ch := <-debugger.inputCh
+		log.Printf("IN read '%s' (%d) from stdin\n", string(rune(ch)), rune(ch))
+		return ch, nil
 	}
 }
 
 func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
-		var l string
-		var err error
-		_, cy := v.Cursor()
-		if l, err = v.Line(cy); err != nil {
-			return err
+		l := v.Buffer()
+		if len(l) == 0 {
+			input <- uint16('\n')
+		} else {
+			input <- uint16(l[0])
 		}
-		input <- uint16(l[0])
 		v.Visible = false
 		v.Clear()
 		if _, err := g.SetCurrentView("output"); err != nil {
