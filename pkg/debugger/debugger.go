@@ -104,8 +104,16 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		}
 
 		ch := <-debugger.inputCh
-		log.Printf("IN read '%s' (%d) from stdin\n", string(rune(ch)), rune(ch))
+		log.Printf("IN read '%s' (%d) from stdin\n", str(rune(ch)), rune(ch))
 		return ch, nil
+	}
+}
+
+func str(ch rune) string {
+	if ch == '\n' {
+		return "\\n"
+	} else {
+		return string(ch)
 	}
 }
 
