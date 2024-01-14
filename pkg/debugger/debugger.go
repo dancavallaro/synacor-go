@@ -62,6 +62,9 @@ func (d *Debugger) executeWhenRunning() {
 }
 
 func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlP, gocui.ModNone, d.pause); err != nil {
+		return err
+	}
 	if err := gui.SetKeybinding("", gocui.KeyCtrlR, gocui.ModNone, d.execute); err != nil {
 		return err
 	}
@@ -187,6 +190,12 @@ func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 i
 	}
 	f.Draw(v)
 
+	return nil
+}
+
+// TODO: add state display
+func (d *Debugger) pause(_ *gocui.Gui, _ *gocui.View) error {
+	d.state = Paused
 	return nil
 }
 
