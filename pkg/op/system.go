@@ -4,8 +4,6 @@ import (
 	"dancavallaro.com/synacor-go/pkg/env"
 	"dancavallaro.com/synacor-go/pkg/memory"
 	"fmt"
-	"log"
-	"os"
 )
 
 // Magic number that will signal when an IN instruction is being canceled (e.g. during
@@ -13,9 +11,7 @@ import (
 const CancelInput = 12345
 
 func Halt(_ *memory.Memory, _ []uint16) {
-	log.Println()
-	log.Println("Execution halted.")
-	os.Exit(0)
+	env.Config.Halt()
 }
 
 func Noop(_ *memory.Memory, _ []uint16) {}

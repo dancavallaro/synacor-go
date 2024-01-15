@@ -16,6 +16,7 @@ const (
 	Paused State = iota
 	Running
 	StepOnce
+	Halted
 )
 
 func (s State) String() string {
@@ -25,6 +26,8 @@ func (s State) String() string {
 		return "RUNNING"
 	} else if s == StepOnce {
 		return "STEP"
+	} else if s == Halted {
+		return "HALTED"
 	}
 	panic("unknown value of State!")
 }
@@ -41,6 +44,7 @@ func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
 	env.Config.ReadChar = requestInput(g, debug)
+	env.Config.Halt = debug.halt
 	return debug
 }
 
@@ -67,7 +71,7 @@ func (d *Debugger) executeWhenRunning() {
 				panic(err)
 			}
 		}
-		if state == StepOnce {
+		if state == StepOnce && d.state != Halted {
 			d.state = Paused
 		}
 	}
@@ -221,16 +225,25 @@ func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 i
 }
 
 func (d *Debugger) pause(_ *gocui.Gui, _ *gocui.View) error {
+	if d.state == Halted {
+		return nil
+	}
 	d.state = Paused
 	return nil
 }
 
 func (d *Debugger) execute(_ *gocui.Gui, _ *gocui.View) error {
+	if d.state == Halted {
+		return nil
+	}
 	d.state = Running
 	return nil
 }
 
 func (d *Debugger) step(_ *gocui.Gui, _ *gocui.View) error {
+	if d.state == Halted {
+		return nil
+	}
 	d.state = StepOnce
 	return nil
 }
@@ -245,7 +258,7 @@ func (d *Debugger) restart(g *gocui.Gui, _ *gocui.View) error {
 	}
 	o.Clear()
 
-	if v := g.CurrentView(); v.Name() == "msg" {
+	if v := g.CurrentView(); v != nil && v.Name() == "msg" {
 		d.inputCh <- op.CancelInput
 		if err := closeModal(g, v); err != nil {
 			return err
@@ -255,6 +268,11 @@ func (d *Debugger) restart(g *gocui.Gui, _ *gocui.View) error {
 	d.VM.Restart()
 
 	return nil
+}
+
+func (d *Debugger) halt() {
+	log.Println("Execution halted.")
+	d.state = Halted
 }
 
 type base int

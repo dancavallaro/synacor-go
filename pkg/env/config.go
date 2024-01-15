@@ -3,16 +3,24 @@ package env
 import (
 	"bufio"
 	"io"
+	"log"
 	"os"
 )
 
-// TODO: add halt
 var Config = struct {
 	Output   io.Writer
 	ReadChar func() (uint16, error)
+	Halt     func()
 }{
 	os.Stdin,
 	readChar,
+	halt,
+}
+
+func halt() {
+	log.Println()
+	log.Println("Execution halted.")
+	os.Exit(0)
 }
 
 func readChar() (uint16, error) {
