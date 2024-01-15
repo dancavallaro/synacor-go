@@ -47,6 +47,7 @@ func (h HelpView) Draw(_ *View) {}
 
 type RegisterView struct {
 	m *memory.Memory
+	b *base
 }
 
 func (h RegisterView) Init(v *View) {
@@ -57,22 +58,15 @@ func (h RegisterView) Draw(v *View) {
 	v.Clear()
 	pc, gp := h.m.PC, h.m.GP
 
-	if displayBase == hex {
-		v.Printf("PC: %#04x\t", pc)
-	} else {
-		v.Printf("PC: %06d\t", pc)
-	}
+	v.Printf("PC: %s\t", h.b.strSym(pc))
 	for i := 0; i < memory.NumRegisters; i++ {
-		if displayBase == hex {
-			v.Printf("R%d: %#04x\t", i, gp[i])
-		} else {
-			v.Printf("R%d: %06d\t", i, gp[i])
-		}
+		v.Printf("R%d: %s\t", i, h.b.strSym(int(gp[i])))
 	}
 }
 
 type StackView struct {
 	m *memory.Memory
+	b *base
 }
 
 func (h StackView) Init(v *View) {
@@ -83,11 +77,7 @@ func (h StackView) Draw(v *View) {
 	v.Clear()
 
 	for i := 0; i < len(h.m.Stack); i++ {
-		if displayBase == hex {
-			v.Printf("%#04x", h.m.Stack[i])
-		} else {
-			v.Printf("%06d", h.m.Stack[i])
-		}
+		v.Print(h.b.strSym(int(h.m.Stack[i])))
 		if i < len(h.m.Stack)-1 {
 			v.Printf("\t")
 		} else {
@@ -141,6 +131,7 @@ func (h StateView) Draw(v *View) {
 
 type MemoryView struct {
 	m *memory.Memory
+	b *base
 }
 
 func (h MemoryView) Init(v *View) {
@@ -157,7 +148,7 @@ func (h MemoryView) Draw(v *View) {
 		for line := 0; line < y-2; line++ {
 			startAddr := h.m.PC + memoryLineLength*line
 			endAddr := startAddr + memoryLineLength
-			s := drawMemLine(startAddr, h.m.Mem[startAddr:endAddr])
+			s := drawMemLine(*h.b, startAddr, h.m.Mem[startAddr:endAddr])
 			spaces := (x - len(s)) / 2
 			for i := 0; i < spaces; i++ {
 				v.Print(" ")
@@ -167,11 +158,11 @@ func (h MemoryView) Draw(v *View) {
 	}
 }
 
-func drawMemLine(startAddr int, mem []uint16) string {
+func drawMemLine(b base, startAddr int, mem []uint16) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%#04x:  ", startAddr))
+	sb.WriteString(fmt.Sprintf("%s:  ", b.strSym(startAddr)))
 	for _, w := range mem {
-		sb.WriteString(fmt.Sprintf("%04x ", w)) // TODO: Support toggling units, refactor that code
+		sb.WriteString(fmt.Sprintf("%s ", b.str(int(w))))
 	}
 	sb.WriteString("  ")
 	for _, w := range mem {

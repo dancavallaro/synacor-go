@@ -5,6 +5,7 @@ import (
 	"dancavallaro.com/synacor-go/pkg/op"
 	"dancavallaro.com/synacor-go/pkg/vm"
 	"errors"
+	"fmt"
 	"github.com/awesome-gocui/gocui"
 	"log"
 	"time"
@@ -37,10 +38,11 @@ type Debugger struct {
 	viewsToRefresh map[*gocui.View]Frame
 	state          State
 	inputCh        chan uint16
+	displayBase    base
 }
 
 func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
-	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused, make(chan uint16)}
+	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused, make(chan uint16), hex}
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
 	env.Config.ReadChar = requestInput(g, debug)
@@ -88,7 +90,7 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone, d.step); err != nil {
 		return err
 	}
-	if err := gui.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone, toggleBase); err != nil {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone, d.toggleBase); err != nil {
 		return err
 	}
 	if err := gui.SetKeybinding("", gocui.KeyCtrlBackslash, gocui.ModNone, d.restart); err != nil {
@@ -172,7 +174,7 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, MemoryView{&d.VM.M}, "memory", 0, midY+1, mult(maxX, 0.75), maxY-7, true); err != nil {
+	if err := d.drawView(g, MemoryView{&d.VM.M, &d.displayBase}, "memory", 0, midY+1, mult(maxX, 0.75), maxY-7, true); err != nil {
 		return err
 	}
 
@@ -184,11 +186,11 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, StackView{&d.VM.M}, "stack", -1, maxY-6, maxX, maxY-4, true); err != nil {
+	if err := d.drawView(g, StackView{&d.VM.M, &d.displayBase}, "stack", -1, maxY-6, maxX, maxY-4, true); err != nil {
 		return err
 	}
 
-	if err := d.drawView(g, RegisterView{&d.VM.M}, "registers", -1, maxY-4, maxX, maxY-2, true); err != nil {
+	if err := d.drawView(g, RegisterView{&d.VM.M, &d.displayBase}, "registers", -1, maxY-4, maxX, maxY-2, true); err != nil {
 		return err
 	}
 
@@ -278,13 +280,31 @@ const (
 	dec
 )
 
-var displayBase = hex
+func (b base) str(n int) string {
+	if b == hex {
+		return fmt.Sprintf("%04x", n)
+	} else if b == dec {
+		return fmt.Sprintf("%06d", n)
+	}
+	panic("unknown base!")
+}
 
-func toggleBase(_ *gocui.Gui, _ *gocui.View) error {
-	if displayBase == hex {
-		displayBase = dec
+func (b base) strSym(n int) string {
+	return fmt.Sprintf("%s%s", b.prefix(), b.str(n))
+}
+
+func (b base) prefix() string {
+	if b == hex {
+		return "0x"
+	}
+	return ""
+}
+
+func (d *Debugger) toggleBase(_ *gocui.Gui, _ *gocui.View) error {
+	if d.displayBase == hex {
+		d.displayBase = dec
 	} else {
-		displayBase = hex
+		d.displayBase = hex
 	}
 	return nil
 }
