@@ -54,7 +54,7 @@ func (d *Debugger) refreshUI(g *gocui.Gui) {
 		case <-time.After(100 * time.Millisecond):
 			g.Update(func(g *gocui.Gui) error {
 				for v, f := range d.viewsToRefresh {
-					f.Draw(v)
+					f.Draw(&View{v})
 				}
 				return nil
 			})
@@ -203,11 +203,6 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-type Frame interface {
-	Init(v *gocui.View)
-	Draw(v *gocui.View)
-}
-
 func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 int, refresh bool) error {
 	var v *gocui.View
 	var err error
@@ -215,12 +210,12 @@ func (d *Debugger) drawView(g *gocui.Gui, f Frame, name string, x0, y0, x1, y1 i
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
-		f.Init(v)
+		f.Init(&View{v})
 		if refresh {
 			d.viewsToRefresh[v] = f
 		}
 	}
-	f.Draw(v)
+	f.Draw(&View{v})
 
 	return nil
 }

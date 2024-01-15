@@ -8,37 +8,64 @@ import (
 	"log"
 )
 
-type HelpView struct{}
-
-func (h HelpView) Init(v *gocui.View) {
-	v.Title = "Help"
-	fmt.Fprint(v, "(^p) pause execution\t(^r) resume execution\t(^s) step execution\t(^x) toggle hex/dec\t(^\\) reset state and restart")
+type View struct {
+	*gocui.View
 }
 
-func (h HelpView) Draw(_ *gocui.View) {}
+func (v *View) Print(a ...any) {
+	if _, err := fmt.Fprint(v, a...); err != nil {
+		panic(err)
+	}
+}
+
+func (v *View) Printf(format string, a ...any) {
+	if _, err := fmt.Fprintf(v, format, a...); err != nil {
+		panic(err)
+	}
+}
+
+func (v *View) Println(a ...any) {
+	if _, err := fmt.Fprintln(v, a...); err != nil {
+		panic(err)
+	}
+}
+
+type Frame interface {
+	Init(v *View)
+	Draw(v *View)
+}
+
+type HelpView struct{}
+
+func (h HelpView) Init(v *View) {
+	v.Title = "Help"
+	v.Print("(^p) pause execution\t(^r) resume execution\t(^s) step execution\t(^x) toggle hex/dec\t(^\\) reset state and restart")
+}
+
+func (h HelpView) Draw(_ *View) {}
 
 type RegisterView struct {
 	m *memory.Memory
 }
 
-func (h RegisterView) Init(v *gocui.View) {
+func (h RegisterView) Init(v *View) {
 	v.Title = "Registers"
 }
 
-func (h RegisterView) Draw(v *gocui.View) {
+func (h RegisterView) Draw(v *View) {
 	v.Clear()
 	pc, gp := h.m.PC, h.m.GP
 
 	if displayBase == hex {
-		fmt.Fprintf(v, "PC: %#04x\t", pc)
+		v.Printf("PC: %#04x\t", pc)
 	} else {
-		fmt.Fprintf(v, "PC: %06d\t", pc)
+		v.Printf("PC: %06d\t", pc)
 	}
 	for i := 0; i < memory.NumRegisters; i++ {
 		if displayBase == hex {
-			fmt.Fprintf(v, "R%d: %#04x\t", i, gp[i])
+			v.Printf("R%d: %#04x\t", i, gp[i])
 		} else {
-			fmt.Fprintf(v, "R%d: %06d\t", i, gp[i])
+			v.Printf("R%d: %06d\t", i, gp[i])
 		}
 	}
 }
@@ -47,56 +74,56 @@ type StackView struct {
 	m *memory.Memory
 }
 
-func (h StackView) Init(v *gocui.View) {
+func (h StackView) Init(v *View) {
 	v.Title = "Stack"
 }
 
-func (h StackView) Draw(v *gocui.View) {
+func (h StackView) Draw(v *View) {
 	v.Clear()
 
 	for i := 0; i < len(h.m.Stack); i++ {
 		if displayBase == hex {
-			fmt.Fprintf(v, "%#04x", h.m.Stack[i])
+			v.Printf("%#04x", h.m.Stack[i])
 		} else {
-			fmt.Fprintf(v, "%06d", h.m.Stack[i])
+			v.Printf("%06d", h.m.Stack[i])
 		}
 		if i < len(h.m.Stack)-1 {
-			fmt.Fprintf(v, "\t")
+			v.Printf("\t")
 		} else {
-			fmt.Fprintf(v, " ")
+			v.Printf(" ")
 		}
 	}
 
-	fmt.Fprint(v, "◄SP")
+	v.Print("◄SP")
 }
 
 type OutputView struct{}
 
-func (h OutputView) Init(v *gocui.View) {
+func (h OutputView) Init(v *View) {
 	v.Title = "Output"
 	v.Autoscroll = true
 	env.Config.Output = v
 }
 
-func (h OutputView) Draw(_ *gocui.View) {}
+func (h OutputView) Draw(_ *View) {}
 
 type LogView struct{}
 
-func (h LogView) Init(v *gocui.View) {
+func (h LogView) Init(v *View) {
 	v.Title = "System Log"
 	v.Autoscroll = true
 	log.Default().SetOutput(v)
 }
 
-func (h LogView) Draw(_ *gocui.View) {}
+func (h LogView) Draw(_ *View) {}
 
 type DisassemblyView struct{}
 
-func (h DisassemblyView) Init(v *gocui.View) {
+func (h DisassemblyView) Init(v *View) {
 	v.Title = "Disassembly"
 }
 
-func (h DisassemblyView) Draw(_ *gocui.View) {
+func (h DisassemblyView) Draw(_ *View) {
 	// TODO
 }
 
@@ -104,22 +131,22 @@ type StateView struct {
 	state *State
 }
 
-func (h StateView) Init(_ *gocui.View) {}
+func (h StateView) Init(_ *View) {}
 
-func (h StateView) Draw(v *gocui.View) {
+func (h StateView) Draw(v *View) {
 	v.Clear()
-	fmt.Fprintf(v, "%v", *h.state)
+	v.Printf("%v", *h.state)
 }
 
 type MemoryView struct {
 	m *memory.Memory
 }
 
-func (h MemoryView) Init(v *gocui.View) {
+func (h MemoryView) Init(v *View) {
 	v.Title = "Memory"
 }
 
-func (h MemoryView) Draw(v *gocui.View) {
+func (h MemoryView) Draw(v *View) {
 	v.Clear()
 	if h.m != nil {
 		// TODO: Make this dynamic based on size of view?
@@ -127,7 +154,7 @@ func (h MemoryView) Draw(v *gocui.View) {
 		lineLength := 16
 
 		_, y := v.Size()
-		fmt.Fprintln(v)
+		v.Println()
 		for line := 0; line < y-2; line++ {
 			startAddr := h.m.PC + lineLength*line
 			drawMemLine(v, startAddr, h.m.Mem[startAddr:startAddr+16])
@@ -135,18 +162,18 @@ func (h MemoryView) Draw(v *gocui.View) {
 	}
 }
 
-func drawMemLine(v *gocui.View, startAddr int, mem []uint16) {
-	fmt.Fprintf(v, "  %#04x:  ", startAddr)
+func drawMemLine(v *View, startAddr int, mem []uint16) {
+	v.Printf("  %#04x:  ", startAddr)
 	for _, w := range mem {
-		fmt.Fprintf(v, "%04x ", w) // TODO: Support toggling units, refactor that code
+		v.Printf("%04x ", w) // TODO: Support toggling units, refactor that code
 	}
-	fmt.Fprintf(v, "  ")
+	v.Print("  ")
 	for _, w := range mem {
 		ch := '.'
 		if w >= 32 && w <= 126 {
 			ch = rune(w)
 		}
-		fmt.Fprint(v, string(ch))
+		v.Print(string(ch))
 	}
-	fmt.Fprint(v, "\n")
+	v.Print("\n")
 }
