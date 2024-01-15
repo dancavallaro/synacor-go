@@ -8,7 +8,6 @@ been working from the archive at https://github.com/Aneurysm9/vm_challenge/tree/
 ## TODOs
 
 - Display number of instructions executed
-- Display disassembled program
 - Keybindings to:
   - Set breakpoints/run until breakpoint
   - Edit registers/stack/memory

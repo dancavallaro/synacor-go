@@ -46,8 +46,9 @@ func (h HelpView) Init(v *View) {
 func (h HelpView) Draw(_ *View) {}
 
 type RegisterView struct {
-	m *memory.Memory
-	b *base
+	m  *memory.Memory
+	pc *int
+	b  *base
 }
 
 func (h RegisterView) Init(v *View) {
@@ -56,9 +57,9 @@ func (h RegisterView) Init(v *View) {
 
 func (h RegisterView) Draw(v *View) {
 	v.Clear()
-	pc, gp := h.m.PC, h.m.GP
+	gp := h.m.GP
 
-	v.Printf("PC: %s\t", h.b.strSym(pc))
+	v.Printf("PC: %s\t", h.b.strSym(*h.pc))
 	for i := 0; i < memory.NumRegisters; i++ {
 		v.Printf("R%d: %s\t", i, h.b.strSym(int(gp[i])))
 	}
@@ -108,14 +109,51 @@ func (h LogView) Init(v *View) {
 
 func (h LogView) Draw(_ *View) {}
 
-type DisassemblyView struct{}
+type DisassemblyView struct {
+	d *Debugger
+	b *base
+}
 
 func (h DisassemblyView) Init(v *View) {
 	v.Title = "Disassembly"
 }
 
-func (h DisassemblyView) Draw(_ *View) {
-	// TODO
+func numStr(num uint16, b base) string {
+	if num >= memory.RegOffset && num < memory.RegOffset+memory.NumRegisters {
+		regNum := num - memory.RegOffset
+		return fmt.Sprintf("R%d", regNum)
+	} else if isChar(num) || num == '\n' {
+		return fmt.Sprintf("'%s'", str(rune(num)))
+	} else {
+		return b.strSym(int(num))
+	}
+}
+
+func argStr(args []uint16, b base) string {
+	if len(args) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(" ")
+	for _, arg := range args {
+		sb.WriteString(fmt.Sprintf("%v ", numStr(arg, b)))
+	}
+	return sb.String()
+}
+
+func (h DisassemblyView) Draw(v *View) {
+	v.Clear()
+	v.Println()
+	pc := h.d.VM.OriginalPC
+	_, y := v.Size()
+	for line := 0; line < y-2; line++ {
+		o, args, err := h.d.VM.DecodeOp(pc)
+		if err != nil {
+			panic(err)
+		}
+		v.Printf("    %s: %s%s\n", h.b.strSym(pc), o.Mnemonic, argStr(args, *h.b))
+		pc += 1 + len(args)
+	}
 }
 
 type StateView struct {
@@ -130,8 +168,9 @@ func (h StateView) Draw(v *View) {
 }
 
 type MemoryView struct {
-	m *memory.Memory
-	b *base
+	m  *memory.Memory
+	pc *int
+	b  *base
 }
 
 func (h MemoryView) Init(v *View) {
@@ -146,7 +185,7 @@ func (h MemoryView) Draw(v *View) {
 		x, y := v.Size()
 		v.Println()
 		for line := 0; line < y-2; line++ {
-			startAddr := h.m.PC + memoryLineLength*line
+			startAddr := *h.pc + memoryLineLength*line
 			endAddr := startAddr + memoryLineLength
 			s := drawMemLine(*h.b, startAddr, h.m.Mem[startAddr:endAddr])
 			spaces := (x - len(s)) / 2
@@ -167,10 +206,17 @@ func drawMemLine(b base, startAddr int, mem []uint16) string {
 	sb.WriteString("  ")
 	for _, w := range mem {
 		ch := '.'
-		if w >= 32 && w <= 126 {
+		if isChar(w) {
 			ch = rune(w)
 		}
 		sb.WriteString(string(ch))
 	}
 	return sb.String()
+}
+
+func isChar(w uint16) bool {
+	if w >= 32 && w <= 126 {
+		return true
+	}
+	return false
 }

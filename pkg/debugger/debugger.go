@@ -174,7 +174,7 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, MemoryView{&d.VM.M, &d.displayBase}, "memory", 0, midY+1, mult(maxX, 0.75), maxY-7, true); err != nil {
+	if err := d.drawView(g, MemoryView{&d.VM.M, &d.VM.OriginalPC, &d.displayBase}, "memory", 0, midY+1, mult(maxX, 0.75), maxY-7, true); err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, DisassemblyView{}, "disassembly", int(0.75*float32(maxX))+1, midY+1, maxX-1, maxY-7, true); err != nil {
+	if err := d.drawView(g, DisassemblyView{d, &d.displayBase}, "disassembly", int(0.75*float32(maxX))+1, midY+1, maxX-1, maxY-7, true); err != nil {
 		return err
 	}
 
@@ -190,7 +190,7 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, RegisterView{&d.VM.M, &d.displayBase}, "registers", -1, maxY-4, maxX, maxY-2, true); err != nil {
+	if err := d.drawView(g, RegisterView{&d.VM.M, &d.VM.OriginalPC, &d.displayBase}, "registers", -1, maxY-4, maxX, maxY-2, true); err != nil {
 		return err
 	}
 

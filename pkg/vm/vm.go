@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-type opRef struct {
+type OpRef struct {
 	opcode   uint16
 	nArgs    int
 	execute  func(registers *memory.Memory, args []uint16)
-	mnemonic string
+	Mnemonic string
 }
 
-var ops = []opRef{
+var ops = []OpRef{
 	{0, 0, op.Halt, "halt"},
 	{1, 2, op.Set, "set"},
 	{2, 1, op.Push, "push"},
@@ -40,7 +40,7 @@ var ops = []opRef{
 	{20, 1, op.In, "in"},
 	{21, 0, op.Noop, "noop"},
 }
-var opRefs = map[uint16]opRef{}
+var opRefs = map[uint16]OpRef{}
 
 func init() {
 	for _, o := range ops {
@@ -55,8 +55,9 @@ type ExecutionOptions struct {
 }
 
 type VM struct {
-	M       memory.Memory
-	Options *ExecutionOptions
+	M          memory.Memory
+	OriginalPC int
+	Options    *ExecutionOptions
 
 	binary        []byte
 	opsExecuted   int
@@ -71,27 +72,35 @@ func NewVM(bin []byte, opts *ExecutionOptions) *VM {
 	return vm
 }
 
-func (vm *VM) Step() error {
-	pc := vm.M.PC // Save original PC value
-	w := vm.M.Mem[vm.M.PC]
-	vm.M.PC += 1
+func (vm *VM) DecodeOp(start int) (OpRef, []uint16, error) {
+	w := vm.M.Mem[start]
 	o, ok := opRefs[w]
 	if !ok {
-		return errors.New(fmt.Sprintf("invalid opcode %d", w))
+		return OpRef{}, nil, errors.New(fmt.Sprintf("invalid opcode %d", w))
 	}
 
 	var args []uint16
 	for arg := 1; arg <= o.nArgs; arg++ {
-		w := vm.M.Mem[vm.M.PC]
-		vm.M.PC += 1
+		w := vm.M.Mem[start+arg]
 		args = append(args, w)
 	}
 
-	if vm.Options.Breakpoint >= 0 && pc == vm.Options.Breakpoint {
+	return o, args, nil
+}
+
+func (vm *VM) Step() error {
+	vm.OriginalPC = vm.M.PC // Save original PC value
+	o, args, err := vm.DecodeOp(vm.M.PC)
+	if err != nil {
+		return err
+	}
+	vm.M.PC += 1 + len(args)
+
+	if vm.Options.Breakpoint >= 0 && vm.OriginalPC == vm.Options.Breakpoint {
 		vm.Options.Trace = true
 	}
 	if vm.Options.Trace {
-		log.Printf("[PC=%d (0x%x)] %d (%s): %v", pc, pc, o.opcode, o.mnemonic, args)
+		log.Printf("[PC=%d (0x%x)] %d (%s): %v", vm.OriginalPC, vm.OriginalPC, o.opcode, o.Mnemonic, args)
 	}
 
 	o.execute(&vm.M, args)
@@ -115,6 +124,7 @@ func (vm *VM) Execute() error {
 
 func (vm *VM) Restart() {
 	vm.M = memory.Memory{}
+	vm.OriginalPC = 0
 	vm.loadProgram()
 }
 
