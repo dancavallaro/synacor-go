@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/awesome-gocui/gocui"
 	"log"
+	"strings"
 )
 
 type View struct {
@@ -146,34 +147,39 @@ func (h MemoryView) Init(v *View) {
 	v.Title = "Memory"
 }
 
+const memoryLineLength = 16
+
 func (h MemoryView) Draw(v *View) {
 	v.Clear()
 	if h.m != nil {
-		// TODO: Make this dynamic based on size of view?
-		// TODO: Or at least center it in the panel
-		lineLength := 16
-
-		_, y := v.Size()
+		x, y := v.Size()
 		v.Println()
 		for line := 0; line < y-2; line++ {
-			startAddr := h.m.PC + lineLength*line
-			drawMemLine(v, startAddr, h.m.Mem[startAddr:startAddr+16])
+			startAddr := h.m.PC + memoryLineLength*line
+			endAddr := startAddr + memoryLineLength
+			s := drawMemLine(startAddr, h.m.Mem[startAddr:endAddr])
+			spaces := (x - len(s)) / 2
+			for i := 0; i < spaces; i++ {
+				v.Print(" ")
+			}
+			v.Println(s)
 		}
 	}
 }
 
-func drawMemLine(v *View, startAddr int, mem []uint16) {
-	v.Printf("  %#04x:  ", startAddr)
+func drawMemLine(startAddr int, mem []uint16) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("%#04x:  ", startAddr))
 	for _, w := range mem {
-		v.Printf("%04x ", w) // TODO: Support toggling units, refactor that code
+		sb.WriteString(fmt.Sprintf("%04x ", w)) // TODO: Support toggling units, refactor that code
 	}
-	v.Print("  ")
+	sb.WriteString("  ")
 	for _, w := range mem {
 		ch := '.'
 		if w >= 32 && w <= 126 {
 			ch = rune(w)
 		}
-		v.Print(string(ch))
+		sb.WriteString(string(ch))
 	}
-	v.Print("\n")
+	return sb.String()
 }
