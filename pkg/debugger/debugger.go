@@ -67,7 +67,8 @@ func (d *Debugger) executeWhenRunning() {
 		state := d.state
 		if state == Running || state == StepOnce {
 			if err := d.VM.Step(); err != nil {
-				// TODO: Don't panic, this should return an error to the debugger
+				// An error here from the VM includes things like invalid opcodes and
+				// may not be recoverable, so just panic.
 				panic(err)
 			}
 		}
