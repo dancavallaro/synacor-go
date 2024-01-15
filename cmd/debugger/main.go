@@ -47,7 +47,6 @@ func main() {
 		log.Fatalln(err)
 	}
 	gui.SetManagerFunc(debug.Layout)
-	gui.Cursor = true
 	err = debug.InitKeybindings(gui)
 	if err != nil {
 		log.Fatalln(err)

@@ -111,6 +111,7 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		if _, err := g.SetCurrentView("msg"); err != nil {
 			return 0, err
 		}
+		g.Cursor = true
 
 		ch := <-debugger.inputCh
 		log.Printf("IN read '%s' (%d) from stdin\n", str(rune(ch)), rune(ch))
@@ -136,6 +137,7 @@ func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 		}
 		v.Visible = false
 		v.Clear()
+		g.Cursor = false
 		if _, err := g.SetCurrentView("output"); err != nil {
 			return err
 		}
