@@ -194,7 +194,11 @@ func (d *Debugger) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := d.drawView(g, HelpView{}, "help", -1, maxY-2, maxX-10, maxY, false); err != nil {
+	if err := d.drawView(g, HelpView{}, "help", -1, maxY-2, maxX-35, maxY, false); err != nil {
+		return err
+	}
+
+	if err := d.drawView(g, OpsView{d.VM}, "ops", maxX-35, maxY-2, maxX-10, maxY, true); err != nil {
 		return err
 	}
 

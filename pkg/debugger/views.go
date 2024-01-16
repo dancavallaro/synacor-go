@@ -3,6 +3,7 @@ package debugger
 import (
 	"dancavallaro.com/synacor-go/pkg/env"
 	"dancavallaro.com/synacor-go/pkg/memory"
+	"dancavallaro.com/synacor-go/pkg/vm"
 	"fmt"
 	"github.com/awesome-gocui/gocui"
 	"log"
@@ -51,17 +52,17 @@ type RegisterView struct {
 	b  *base
 }
 
-func (h RegisterView) Init(v *View) {
+func (r RegisterView) Init(v *View) {
 	v.Title = "Registers"
 }
 
-func (h RegisterView) Draw(v *View) {
+func (r RegisterView) Draw(v *View) {
 	v.Clear()
-	gp := h.m.GP
+	gp := r.m.GP
 
-	v.Printf("PC: %s\t", h.b.strSym(*h.pc))
+	v.Printf("PC: %s\t", r.b.strSym(*r.pc))
 	for i := 0; i < memory.NumRegisters; i++ {
-		v.Printf("R%d: %s\t", i, h.b.strSym(int(gp[i])))
+		v.Printf("R%d: %s\t", i, r.b.strSym(int(gp[i])))
 	}
 }
 
@@ -70,16 +71,16 @@ type StackView struct {
 	b *base
 }
 
-func (h StackView) Init(v *View) {
+func (s StackView) Init(v *View) {
 	v.Title = "Stack"
 }
 
-func (h StackView) Draw(v *View) {
+func (s StackView) Draw(v *View) {
 	v.Clear()
 
-	for i := 0; i < len(h.m.Stack); i++ {
-		v.Print(h.b.strSym(int(h.m.Stack[i])))
-		if i < len(h.m.Stack)-1 {
+	for i := 0; i < len(s.m.Stack); i++ {
+		v.Print(s.b.strSym(int(s.m.Stack[i])))
+		if i < len(s.m.Stack)-1 {
 			v.Printf("\t")
 		} else {
 			v.Printf(" ")
@@ -91,30 +92,30 @@ func (h StackView) Draw(v *View) {
 
 type OutputView struct{}
 
-func (h OutputView) Init(v *View) {
+func (o OutputView) Init(v *View) {
 	v.Title = "Output"
 	v.Autoscroll = true
 	env.Config.Output = v
 }
 
-func (h OutputView) Draw(_ *View) {}
+func (o OutputView) Draw(_ *View) {}
 
 type LogView struct{}
 
-func (h LogView) Init(v *View) {
+func (l LogView) Init(v *View) {
 	v.Title = "System Log"
 	v.Autoscroll = true
 	log.Default().SetOutput(v)
 }
 
-func (h LogView) Draw(_ *View) {}
+func (l LogView) Draw(_ *View) {}
 
 type DisassemblyView struct {
 	d *Debugger
 	b *base
 }
 
-func (h DisassemblyView) Init(v *View) {
+func (d DisassemblyView) Init(v *View) {
 	v.Title = "Disassembly"
 }
 
@@ -141,17 +142,17 @@ func argStr(args []uint16, b base) string {
 	return sb.String()
 }
 
-func (h DisassemblyView) Draw(v *View) {
+func (d DisassemblyView) Draw(v *View) {
 	v.Clear()
 	v.Println()
-	pc := h.d.VM.OriginalPC
+	pc := d.d.VM.OriginalPC
 	_, y := v.Size()
 	for line := 0; line < y-2; line++ {
-		o, args, err := h.d.VM.DecodeOp(pc)
+		o, args, err := d.d.VM.DecodeOp(pc)
 		if err != nil {
 			panic(err)
 		}
-		v.Printf("    %s: %s%s\n", h.b.strSym(pc), o.Mnemonic, argStr(args, *h.b))
+		v.Printf("    %s: %s%s\n", d.b.strSym(pc), o.Mnemonic, argStr(args, *d.b))
 		pc += 1 + len(args)
 	}
 }
@@ -160,11 +161,22 @@ type StateView struct {
 	state *State
 }
 
-func (h StateView) Init(_ *View) {}
+func (s StateView) Init(_ *View) {}
 
-func (h StateView) Draw(v *View) {
+func (s StateView) Draw(v *View) {
 	v.Clear()
-	v.Printf("%v", *h.state)
+	v.Printf("%v", *s.state)
+}
+
+type OpsView struct {
+	vm *vm.VM
+}
+
+func (o OpsView) Init(_ *View) {}
+
+func (o OpsView) Draw(v *View) {
+	v.Clear()
+	v.Printf("%d ops executed", o.vm.OpsExecuted())
 }
 
 type MemoryView struct {
@@ -173,21 +185,21 @@ type MemoryView struct {
 	b  *base
 }
 
-func (h MemoryView) Init(v *View) {
+func (m MemoryView) Init(v *View) {
 	v.Title = "Memory"
 }
 
 const memoryLineLength = 16
 
-func (h MemoryView) Draw(v *View) {
+func (m MemoryView) Draw(v *View) {
 	v.Clear()
-	if h.m != nil {
+	if m.m != nil {
 		x, y := v.Size()
 		v.Println()
 		for line := 0; line < y-2; line++ {
-			startAddr := *h.pc + memoryLineLength*line
+			startAddr := *m.pc + memoryLineLength*line
 			endAddr := startAddr + memoryLineLength
-			s := drawMemLine(*h.b, startAddr, h.m.Mem[startAddr:endAddr])
+			s := drawMemLine(*m.b, startAddr, m.m.Mem[startAddr:endAddr])
 			spaces := (x - len(s)) / 2
 			for i := 0; i < spaces; i++ {
 				v.Print(" ")

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -59,9 +60,9 @@ type VM struct {
 	OriginalPC int
 	Options    *ExecutionOptions
 
-	binary        []byte
-	opsExecuted   int
-	stepDebugging bool
+	binary      []byte
+	opsExecuted int
+	lock        sync.Mutex
 }
 
 func NewVM(bin []byte, opts *ExecutionOptions) *VM {
@@ -89,6 +90,9 @@ func (vm *VM) DecodeOp(start int) (OpRef, []uint16, error) {
 }
 
 func (vm *VM) Step() error {
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
+
 	vm.OriginalPC = vm.M.PC // Save original PC value
 	o, args, err := vm.DecodeOp(vm.M.PC)
 	if err != nil {
@@ -105,6 +109,7 @@ func (vm *VM) Step() error {
 
 	o.execute(&vm.M, args)
 	vm.opsExecuted++
+	vm.OriginalPC = vm.M.PC // Now update the display value with the actual PC which might have been updated
 
 	if vm.Options.Delay > 0 {
 		time.Sleep(time.Duration(vm.Options.Delay) * time.Millisecond)
@@ -123,9 +128,17 @@ func (vm *VM) Execute() error {
 }
 
 func (vm *VM) Restart() {
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
+
 	vm.M = memory.Memory{}
 	vm.OriginalPC = 0
+	vm.opsExecuted = 0
 	vm.loadProgram()
+}
+
+func (vm *VM) OpsExecuted() int {
+	return vm.opsExecuted
 }
 
 func (vm *VM) loadProgram() {
