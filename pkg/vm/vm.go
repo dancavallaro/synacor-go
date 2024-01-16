@@ -50,9 +50,8 @@ func init() {
 }
 
 type ExecutionOptions struct {
-	Trace      bool
-	Delay      int
-	Breakpoint int
+	Trace bool
+	Delay int
 }
 
 type VM struct {
@@ -100,9 +99,6 @@ func (vm *VM) Step() error {
 	}
 	vm.M.PC += 1 + len(args)
 
-	if vm.Options.Breakpoint >= 0 && vm.OriginalPC == vm.Options.Breakpoint {
-		vm.Options.Trace = true
-	}
 	if vm.Options.Trace {
 		log.Printf("[PC=%d (0x%x)] %d (%s): %v", vm.OriginalPC, vm.OriginalPC, o.opcode, o.Mnemonic, args)
 	}
@@ -111,9 +107,6 @@ func (vm *VM) Step() error {
 	vm.opsExecuted++
 	vm.OriginalPC = vm.M.PC // Now update the display value with the actual PC which might have been updated
 
-	if vm.Options.Delay > 0 {
-		time.Sleep(time.Duration(vm.Options.Delay) * time.Millisecond)
-	}
 	return nil
 }
 
@@ -121,6 +114,10 @@ func (vm *VM) Execute() error {
 	for vm.M.PC < len(vm.M.Mem) {
 		if err := vm.Step(); err != nil {
 			return err
+		}
+
+		if vm.Options.Delay > 0 {
+			time.Sleep(time.Duration(vm.Options.Delay) * time.Millisecond)
 		}
 	}
 	fmt.Printf("Executed %d instructions\n", vm.opsExecuted)

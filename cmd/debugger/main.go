@@ -36,12 +36,7 @@ func main() {
 	}
 	defer gui.Close()
 
-	opts := vm.ExecutionOptions{
-		Trace:      false,
-		Delay:      -1,
-		Breakpoint: -1,
-	}
-	vm := vm.NewVM(binary, &opts)
+	vm := vm.NewVM(binary, &vm.ExecutionOptions{})
 	debug := debugger.NewDebugger(vm, gui)
 	if err != nil {
 		log.Fatalln(err)
