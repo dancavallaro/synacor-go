@@ -29,9 +29,8 @@ func main() {
 	}
 
 	opts := vm.ExecutionOptions{
-		Trace:      *trace,
-		Delay:      *delay,
-		Breakpoint: *breakpoint,
+		Trace: *trace,
+		Delay: *delay,
 	}
 	vm := vm.NewVM(binary, &opts)
 	err = vm.Execute()
