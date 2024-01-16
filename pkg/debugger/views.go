@@ -41,7 +41,8 @@ type HelpView struct{}
 
 func (h HelpView) Init(v *View) {
 	v.Title = "Help"
-	v.Print("(^p) pause execution\t(^r) resume execution\t(^s) step execution\t(^x) toggle hex/dec\t(^\\) reset state and restart")
+	v.Print("(^p) pause execution\t(^r) resume execution\t(^s) step execution\t" +
+		"(^b) run until breakpoint\t(^x) toggle hex/dec\t(^\\) reset state and restart")
 }
 
 func (h HelpView) Draw(_ *View) {}

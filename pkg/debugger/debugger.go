@@ -37,15 +37,16 @@ type Debugger struct {
 	VM             *vm.VM
 	viewsToRefresh map[*gocui.View]Frame
 	state          State
-	inputCh        chan uint16
+	inCharCh       chan uint16
+	inputCh        chan string
 	displayBase    base
 }
 
 func NewDebugger(VM *vm.VM, g *gocui.Gui) *Debugger {
-	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused, make(chan uint16), hex}
+	debug := &Debugger{VM, make(map[*gocui.View]Frame), Paused, make(chan uint16), make(chan string), hex}
 	go debug.refreshUI(g)
 	go debug.executeWhenRunning()
-	env.Config.ReadChar = requestInput(g, debug)
+	env.Config.ReadChar = requestChar(g, debug)
 	env.Config.Halt = debug.halt
 	return debug
 }
@@ -96,10 +97,13 @@ func (d *Debugger) InitKeybindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding("", gocui.KeyCtrlBackslash, gocui.ModNone, d.restart); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding("", gocui.KeyCtrlB, gocui.ModNone, d.runUntil); err != nil {
+		return err
+	}
 	return nil
 }
 
-func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
+func requestChar(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 	return func() (uint16, error) {
 		output, err := g.View("output")
 		if err != nil {
@@ -114,7 +118,7 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 			}
 			v.Editable = true
 			v.Title = "Enter a character:"
-			if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readInput(debugger.inputCh)); err != nil {
+			if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, readChar(debugger.inCharCh)); err != nil {
 				return 0, err
 			}
 		}
@@ -124,12 +128,35 @@ func requestInput(g *gocui.Gui, debugger *Debugger) func() (uint16, error) {
 		}
 		g.Cursor = true
 
-		ch := <-debugger.inputCh
+		ch := <-debugger.inCharCh
 		if ch != op.CancelInput {
 			log.Printf("IN read '%s' (%d) from stdin\n", str(rune(ch)), rune(ch))
 		}
 		return ch, nil
 	}
+}
+
+func requestInput(g *gocui.Gui, debugger *Debugger) (string, error) {
+	var v *gocui.View
+	var err error
+	maxX, maxY := g.Size()
+	if v, err = g.SetView("input", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2, 0); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return "", err
+		}
+		v.Editable = true
+		v.Title = "Enter breakpoint:"
+		if err := g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, readInput(debugger.inputCh)); err != nil {
+			return "", err
+		}
+	}
+	v.Visible = true
+	if _, err := g.SetCurrentView("input"); err != nil {
+		return "", err
+	}
+	g.Cursor = true
+
+	return <-debugger.inputCh, nil
 }
 
 func str(ch rune) string {
@@ -140,7 +167,7 @@ func str(ch rune) string {
 	}
 }
 
-func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
+func readChar(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
 		l := v.Buffer()
 		if len(l) == 0 {
@@ -148,6 +175,13 @@ func readInput(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 		} else {
 			input <- uint16(l[0])
 		}
+		return closeModal(g, v)
+	}
+}
+
+func readInput(input chan<- string) func(*gocui.Gui, *gocui.View) error {
+	return func(g *gocui.Gui, v *gocui.View) error {
+		input <- v.Buffer()
 		return closeModal(g, v)
 	}
 }
@@ -261,7 +295,7 @@ func (d *Debugger) restart(g *gocui.Gui, _ *gocui.View) error {
 	o.Clear()
 
 	if v := g.CurrentView(); v != nil && v.Name() == "msg" {
-		d.inputCh <- op.CancelInput
+		d.inCharCh <- op.CancelInput
 		if err := closeModal(g, v); err != nil {
 			return err
 		}
@@ -269,6 +303,16 @@ func (d *Debugger) restart(g *gocui.Gui, _ *gocui.View) error {
 
 	d.VM.Restart()
 
+	return nil
+}
+
+func (d *Debugger) runUntil(g *gocui.Gui, _ *gocui.View) error {
+	// TODO: this is causing a deadlock for some reason
+	input, err := requestInput(g, d)
+	if err != nil {
+		return err
+	}
+	log.Printf("Got input: '%s'\n", input)
 	return nil
 }
 
