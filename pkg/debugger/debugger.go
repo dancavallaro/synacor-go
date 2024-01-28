@@ -156,7 +156,8 @@ func requestInput(g *gocui.Gui, debugger *Debugger) (string, error) {
 	}
 	g.Cursor = true
 
-	return <-debugger.inputCh, nil
+	//return <-debugger.inputCh, nil
+	return "", nil
 }
 
 func str(ch rune) string {
@@ -181,7 +182,7 @@ func readChar(input chan<- uint16) func(*gocui.Gui, *gocui.View) error {
 
 func readInput(input chan<- string) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
-		input <- v.Buffer()
+		//input <- v.Buffer()
 		return closeModal(g, v)
 	}
 }
